@@ -48,8 +48,8 @@ The project URL and publishable key in lib/supabase.ts identify this specific In
 - Version history UI is available from the editor's Riwayat button: comparison, TXT download and restore as a new revision. Browser interaction QA remains pending.
 - Full chapter list fetch will need optimization before long-form scale tests.
 - Characters, Story Bible, flat Outline and Notes are implemented with manual save, revision checks and archive/restore (except Bible). Apply database/story-planning.sql only on fresh databases after foundation; live Inkrya already has this migration.
-- No outline hierarchy/board, RAG or DOCX export yet. AI generation code exists but real provider generation has not been verified.
+- No outline hierarchy/board, semantic RAG or DOCX export yet. Production Gateway generation was verified in the alpha; the new Nebius integration still needs a live inference check.
 - Native confirmation dialogs; custom accessible dialog behavior still needs hardening.
 - No billing or analytics configured.
 
-Continue with data safety verification before adding AI features. Do not claim deployed or database-ready until verified.
+Continue in the phase order documented in the hackathon implementation contract. Distinguish tested source, deployed code and verified live integrations in every progress report.

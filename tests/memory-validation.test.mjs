@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {parseModelJSON,validateAnswer,validateInsights} from '../lib/memory-validation.ts';
+const source={id:'s1',chapter_id:'c1',title:'Bab 1',source_revision:1,chunk_index:0,content:'Aurel bekerja di kantor BUMN di Duri.'};
+assert.equal(validateAnswer({claims:[{text:'Aurel bekerja di Duri.',source_id:'s1',quote:'kantor BUMN di Duri'}]},[source]).length,1);
+assert.throws(()=>validateAnswer({claims:[{text:'Aurel di Bandung',source_id:'s2',quote:'kantor BUMN'}]},[source]));
+assert.throws(()=>validateAnswer({claims:[{text:'Aurel di Bandung',source_id:'s1',quote:'Aurel di Bandung'}]},[source]));
+assert.deepEqual(validateAnswer({claims:[]},[source]),[]);
+assert.throws(()=>validateAnswer({claims:[{text:'No source'}]},[source]));
+assert.equal(parseModelJSON('```json\n{"claims":[]}\n```').claims.length,0);
+assert.equal(validateInsights({summary:'Ringkasan',facts:[{claim:'Kerja di Duri',quote:'kantor BUMN di Duri'},{claim:'Kerja di Bandung',quote:'Bandung'}]},source.content).facts.length,1);
+assert.throws(()=>validateInsights({summary:'',facts:[]},source.content));
+console.log('PASS: citation ID allowlist, exact evidence quotes, abstention, malformed output, invalid fact filtering.');
