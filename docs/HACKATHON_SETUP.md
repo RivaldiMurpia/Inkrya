@@ -10,6 +10,8 @@ Use `NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1`. Alternate arbitrar
 
 ## 2. Verify catalog before selecting models
 
+When keys are write-only secrets in Vercel, enable `INKRYA_VERIFY_NEBIUS_BUILD=true` for Preview. The `prebuild` hook runs the catalog-only script inside Vercel and prints the available Nemotron IDs, never the key. A failed check stops that build; a successful catalog check is not inference verification. Keep this optional flag scoped to Preview during activation.
+
 With Node.js 22.18+ and the private local environment file:
 
 ```bash
