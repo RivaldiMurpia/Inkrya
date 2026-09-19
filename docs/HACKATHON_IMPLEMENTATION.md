@@ -2,7 +2,7 @@
 
 Updated: 2026-09-19. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is now the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist. The previous whole-chapter-summary task was interrupted before implementation and is not delivered.
 
-## Current increment: Phase 1 infrastructure (code complete, activation pending)
+## Current increment: Phase 1 infrastructure (source deployed, provider activation pending)
 
 - `lib/ai/models.ts`: explicit provider switch and independent router/memory/planner/writer/continuity/critic/QA model configuration. All Nebius text model IDs must belong to the NVIDIA Nemotron family and appear in the authenticated model catalog. No guessed production model ID.
 - `lib/ai/provider.ts`: Vercel AI SDK OpenAI-compatible chat-completions adapter using the official Nebius endpoint. Catalog success caches for 60 seconds, scoped to a hash of the credential and endpoint. No automatic provider/model fallback. Redirects rejected.
@@ -21,9 +21,10 @@ Writers still review/copy suggestions; no agent writes manuscript/canon automati
 ### Evidence and limits
 
 - Verification on 2026-09-19: 11 new provider/tracing checks plus the existing Memory validation suite passed (12 Node test entries); clean non-incremental TypeScript check and Next.js production build passed. Local HTTP smoke tests passed for gateway/nebius configuration and signed-out rejection on assistant, Memory and generation-history endpoints. No signed-in browser E2E or live Nebius call was performed.
-- Deployment attempt did not create a preview: connected Vercel read operations work, but the deploy operation returned `Tool deploy_to_vercel not found`. No Vercel CLI credential is configured in this workspace. This increment is saved source, not a published preview/production release. Existing live deployment remains unchanged.
+- Source import `d829eca98259fff4d791f023664d418068850ed6` was published through the confirmed GitHub integration. Production deployment `dpl_4zPCcZ9SQ3LVPAVmWoS38ffnE1uy` reached READY and serves `https://inkrya.vercel.app`. The initial README-only deployment had failed with `missing_pages_app`; the complete source import resolved that build error. The connected direct deploy tool remains unavailable; it was not used for this successful deployment.
+- Production HTTP checks on 2026-09-19 passed: homepage 200, Google/GitHub provider status enabled, and unauthenticated assistant/Memory/history requests rejected with 401. `/api/ai` reports provider `gateway`, configured true and tracing false. This verifies the new runtime is deployed; it does not verify Nebius or LangSmith. No signed-in browser E2E was performed in this checkpoint.
 - Automated tests use synthetic model IDs and mocked transports; they do not demonstrate live NVIDIA inference.
-- Live Nebius key and LangSmith key were absent from the local environment. Vercel project metadata did not expose environment settings. Remote secret presence was not inferred from that absence.
+- The owner reports that API keys were added to Vercel. Their values are not present locally and were not exposed by the plugin. The active runtime still selects Gateway and disables tracing. Browser access to Vercel settings requires a separate login; the chosen Google login reached a 502 Bad Gateway page and a fresh Vercel settings tab still shows login. No environment changes were made through that failed login.
 - Exact production model choice, provider-supported reasoning controls, latency, Indonesian writing quality, live token accounting and successful traces must be checked after activation.
 - Responses with explicit `<think>` blocks are rejected; normal reasoning channels are omitted. This is a safeguard, not a guarantee against every model emitting reasoning in its text channel.
 - LangSmith model-run success means generation completed; it does not mean the later citation validator accepted it or a user approved canon. Full workflow/step trace trees arrive with LangGraph.
@@ -61,4 +62,4 @@ Do not claim LangGraph, pgvector, Continuity Guardian, Story Doctor, Tavily rese
 
 ## Next executable gate
 
-Configure Nebius and LangSmith privately using `HACKATHON_SETUP.md`. Verify real inference through existing authenticated routes, record model/usage/trace evidence, and only then mark Phase 1 complete. Next implement pgvector and structured canon, not the full Guardian against incomplete lexical memory.
+Complete Vercel settings access and configure Nebius and LangSmith privately using `HACKATHON_SETUP.md`: provider selector, exact account-visible Nemotron model ID, tracing toggle and environment scope all matter in addition to API keys. Verify real inference through existing authenticated routes, record model/usage/trace evidence, and only then mark Phase 1 complete. Next implement pgvector and structured canon, not the full Guardian against incomplete lexical memory.

@@ -55,7 +55,9 @@ The transport tests mock Nebius and LangSmith; they do not prove real credential
 
 ## Publishing this checkpoint
 
-The repository is `https://github.com/RivaldiMurpia/Inkrya`. Vercel's Git integration is confirmed: deployment `dpl_Bh766yFfQfittpgsAyYLCWw59qPB` attempted the initial README-only commit and failed with `missing_pages_app`. Import the complete source to correct that missing application, then inspect the deployment tied to the new commit. A successful Git upload does not prove a successful build or live provider activation.
+The repository is `https://github.com/RivaldiMurpia/Inkrya`. Vercel's Git integration is confirmed. The initial README-only deployment failed with `missing_pages_app`. Complete source commit `d829eca98259fff4d791f023664d418068850ed6` resolved that error: deployment `dpl_4zPCcZ9SQ3LVPAVmWoS38ffnE1uy` is READY on `https://inkrya.vercel.app` (verified 2026-09-19).
+
+The deployed runtime reports Gateway selected and tracing disabled. The owner has reported adding API keys, but remote secret values/scopes were not inspected. Set the provider/model/tracing configuration described above in the intended environment and redeploy before the authenticated acceptance checks. Do not infer integration success from build success or key presence alone.
 
 Use `hackathon/nebius-2026` for subsequent implementation and Preview verification. The connected direct deploy operation returned `Tool deploy_to_vercel not found`; the Git integration is the available publishing path. Do not extract or repurpose connector credentials or fabricate deployment URLs. Record actual build and inference results before declaring this checkpoint released.
 
