@@ -2,7 +2,7 @@
 
 Updated: 2026-09-20. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is now the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist. The previous whole-chapter-summary task was interrupted before implementation and is not delivered.
 
-## Current increment: Phase 1 infrastructure (live provider diagnostics; authenticated acceptance pending)
+## Current increment: Phase 1 activated on Preview (release quality/revision gates open)
 
 - `lib/ai/models.ts`: explicit provider switch and independent router/memory/planner/writer/continuity/critic/QA model configuration. All Nebius text model IDs must belong to the NVIDIA Nemotron family and appear in the authenticated model catalog. No guessed production model ID.
 - `lib/ai/provider.ts`: Vercel AI SDK OpenAI-compatible chat-completions adapter using the official Nebius endpoint. Catalog success caches for 60 seconds, scoped to a hash of the credential and endpoint. No automatic provider/model fallback. Redirects rejected.
@@ -35,7 +35,7 @@ Writers still review/copy suggestions; no agent writes manuscript/canon automati
 
 | Phase | Existing foundation | Work still required / acceptance gate |
 | --- | --- | --- |
-| 1 Infrastructure | Provider adapter, role routing, metadata traces, persisted generations | Exact catalog-selected Nemotron, real authenticated inference and LangSmith trace; activation and credit controls |
+| 1 Infrastructure | Catalog-selected Nemotron on Preview, live authenticated generations, role routing, metadata traces/readback, persisted history | Indonesian prose quality, revision-conflict follow-up, application trace readback and credit controls before promotion |
 | 2 Memory | Revision-aware lexical chunks, approved-fact review, database Cron | Choose embedding model/dimension; pgvector migration/backfill; structured canon, character knowledge; hybrid ranking and temporal filters |
 | 3 Ask Your Story | Grounded lexical Q&A with citations and abstention | Hybrid/context integration, story-time boundaries, benchmarked quality |
 | 4 Agentic Writing | Non-agentic rewrite/continue | LangGraph JS planner → writer → guardian → bounded repair → critic; durable execution state, cancellation and honest activity UI |
@@ -62,4 +62,4 @@ Do not claim LangGraph, pgvector, Continuity Guardian, Story Doctor, Tavily rese
 
 ## Next executable gate
 
-Finish the authenticated acceptance checks in `HACKATHON_SETUP.md`: verify real inference through existing application routes, persisted model/usage/trace evidence, autosave and Memory review. Address the observed Indonesian prose quality issues before promotion. Only then mark Phase 1 complete. Next implement pgvector and structured canon, not the full Guardian against incomplete lexical memory.
+Authenticated generation, history, grounded Q&A, abstention, extraction and a synthetic fact-review action were verified on 2026-09-20; see `PHASE1_ACTIVATION.md` for record IDs and limits. Next reproduce and resolve the observed editor revision conflict, finish the stale-source UI check and improve Indonesian prose quality before promotion. The four application traces report sent but have not individually been read back; four separate build-fixture traces were read back successfully. Keep Production on Gateway. After acceptance, implement pgvector and structured canon, not the full Guardian against incomplete lexical memory.
