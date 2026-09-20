@@ -76,3 +76,29 @@ test('A real concurrent chapter revision preserves the local draft and does not 
   assert.equal(h.writes.length,1);
  }finally{await h.close()}
 });
+
+test('Duplicate update notifications after an acknowledged save do not write identical content',async()=>{
+ const h=await setup();try{
+  const editor=h.container.querySelector('[contenteditable]').editor;
+  await act(async()=>editor.commands.setContent(content(source+' Mira menutup pintu.')));
+  await h.settle();
+  // A TipTap editability event emits update even with an unchanged document.
+  await act(async()=>editor.setEditable(true));
+  await h.settle();
+  assert.equal(h.writes.length,1);assert.equal(h.server.revision_number,3);
+  assert.match(h.container.textContent,/Tersimpan/);
+ }finally{await h.close()}
+});
+
+test('Duplicate notifications during an in-flight save are acknowledged without another revision',async()=>{
+ const h=await setup();let release;h.setDelay(new Promise(resolve=>{release=resolve}));try{
+  const editor=h.container.querySelector('[contenteditable]').editor;
+  await act(async()=>editor.commands.setContent(content(source+' Mira menutup pintu.')));
+  await act(async()=>button(h.container,' Simpan').click());
+  await act(async()=>editor.setEditable(true));
+  await act(async()=>{release();await pause(20)});
+  await h.settle();
+  assert.equal(h.writes.length,1);assert.equal(h.server.revision_number,3);
+  assert.equal(localStorage.getItem('inkrya:draft:synthetic-user:synthetic-chapter'),null);
+ }finally{release();await h.close()}
+});
