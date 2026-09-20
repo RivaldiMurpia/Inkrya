@@ -6,6 +6,15 @@ import {taskForAction} from '../lib/ai/router.ts';
 import {createNebiusModel,verifyNebiusModel,aiConfigurationStatus} from '../lib/ai/provider.ts';
 import {generateKryaText} from '../lib/ai/generate.ts';
 import {startTrace,safeTraceMetadata} from '../lib/langsmith/tracing.ts';
+import {authReturnUrl} from '../lib/auth-redirect.ts';
+
+test('OAuth returns to the exact owned Preview origin and rejects lookalike hosts',()=>{
+ const preview='https://inkrya-git-hackathon-nebius-2026-rivaldi-murpias-projects.vercel.app';
+ assert.equal(authReturnUrl(preview),preview+'/');
+ for(const origin of ['https://inkrya.vercel.app',preview+'.evil.example','https://other.vercel.app','http://'+preview.slice(8),'//evil.example']){
+  assert.equal(authReturnUrl(origin),'https://inkrya.vercel.app/');
+ }
+});
 
 // Synthetic model IDs and keys. No paid network requests in this suite.
 process.env.LANGSMITH_TRACING='false';

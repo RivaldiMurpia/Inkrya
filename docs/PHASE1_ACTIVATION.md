@@ -35,7 +35,7 @@ The same-build LangSmith readback exceeded its two-second timeout, so that build
 
 ## Automated and remaining checks
 
-Thirteen unit test entries, non-incremental TypeScript, a clean local Next build and HTTP smoke checks passed. HTTP smoke checks cover both provider configurations and signed-out denial for AI, Memory and history. The final live deployment also compiled and typechecked successfully.
+Fourteen unit test entries, non-incremental TypeScript, a clean local Next build and HTTP smoke checks passed. HTTP smoke checks cover both provider configurations and signed-out denial for AI, Memory and history. The final live deployment also compiled and typechecked successfully.
 
 The Preview application currently presents a login screen in the verification browser. Next: authenticate securely, create/use a synthetic test project, generate through Krya, inspect the persisted generation and correlated trace, then exercise Ask My Story, extraction, autosave and human review. Preserve the production provider until those checks and prose quality are acceptable. Never use the owner's private manuscript for activation fixtures.
 
@@ -46,3 +46,9 @@ The Preview application currently presents a login screen in the verification br
 - [Nebius authenticated model catalog](https://docs.tokenfactory.nebius.com/api-reference/models/list-models)
 - [NVIDIA Super model card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16)
 - [Nebius Super catalog](https://tokenfactory.nebius.com/models/catalog/text2text/nvidia%2Fnemotron-3-super-120b-a12b): observed public prices $0.30/M input and $0.90/M output tokens. Account credits/balance were not inspected; this is not a free-model claim or a global budget cap.
+
+## Auth redirect follow-up
+
+The browser's Inkrya sign-in succeeded but landed on Production, leaving Preview signed out. Source inspection found a hardcoded `RETURN_URL=https://inkrya.vercel.app/` in OAuth, signup and resend. The branch now selects the exact owned hackathon Preview origin when signing in there; other origins retain the production destination. A regression test rejects lookalike hosts and other Vercel projects.
+
+The exact Preview root URL must also be allowed in Supabase Auth URL Configuration; its remote allowlist has not yet been verified because the dashboard requires a separate sign-in. Keep the production Site URL as is. Do not add broad Vercel wildcards. See [Supabase redirect guidance](https://supabase.com/docs/guides/auth/redirect-urls). No authenticated Preview AI call has been made yet.

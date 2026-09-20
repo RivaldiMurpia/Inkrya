@@ -2,8 +2,9 @@
 import {useEffect,useState} from 'react';
 import {Feather,Github} from 'lucide-react';
 import {db} from '@/lib/supabase';
+import {authReturnUrl} from '@/lib/auth-redirect';
 
-const RETURN_URL='https://inkrya.vercel.app/';
+const returnUrl=()=>authReturnUrl(window.location.origin);
 type SocialProvider='google'|'github';
 export default function AuthScreen(){
  const [signup,setSignup]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
@@ -14,7 +15,7 @@ export default function AuthScreen(){
   if(busy||cooldown>0)return;
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())){setMessage('Isi alamat email yang digunakan saat mendaftar.');return;}
   setBusy(true);setMessage('');
-  try{const {error}=await db.auth.resend({type:'signup',email:email.trim(),options:{emailRedirectTo:RETURN_URL}});
+  try{const {error}=await db.auth.resend({type:'signup',email:email.trim(),options:{emailRedirectTo:returnUrl()}});
    if(error){setMessage(error.status===429?'Terlalu banyak permintaan. Tunggu sebentar sebelum mencoba lagi.':'Konfirmasi belum dapat dikirim. Coba lagi nanti.');if(error.status===429)setCooldown(60);}
    else{setMessage('Jika akun menunggu konfirmasi, tautan akan dikirim ke email tersebut. Periksa inbox dan spam, lalu kembali untuk masuk.');setCooldown(60);}
   }catch{setMessage('Koneksi terputus. Periksa internet dan coba lagi.');}finally{setBusy(false);}
@@ -28,14 +29,14 @@ export default function AuthScreen(){
  },[]);
  async function social(provider:SocialProvider){
   if(busy||!providers?.[provider])return;setBusy(true);setMessage('');
-  try{const {error}=await db.auth.signInWithOAuth({provider,options:{redirectTo:RETURN_URL,...(provider==='google'?{queryParams:{prompt:'select_account'}}:{scopes:'read:user user:email'})}});if(error)throw error;}
+  try{const {error}=await db.auth.signInWithOAuth({provider,options:{redirectTo:returnUrl(),...(provider==='google'?{queryParams:{prompt:'select_account'}}:{scopes:'read:user user:email'})}});if(error)throw error;}
   catch{setMessage('Login tidak dapat dimulai. Silakan coba lagi nanti.');setBusy(false);}
  }
  async function submit(form:FormData){
   setBusy(true);setMessage('');
   try{
    const credentials={email:String(form.get('email')).trim(),password:String(form.get('password'))};
-   const {data,error}=signup?await db.auth.signUp({...credentials,options:{emailRedirectTo:RETURN_URL}}):await db.auth.signInWithPassword(credentials);
+   const {data,error}=signup?await db.auth.signUp({...credentials,options:{emailRedirectTo:returnUrl()}}):await db.auth.signInWithPassword(credentials);
    if(error){
     if(error.code==='unexpected_failure'||error.message.includes('Database error'))setMessage('Permintaan gagal di server. Jika sebelumnya sudah mendaftar, gunakan Masuk atau Kirim ulang konfirmasi email; tidak perlu membuat akun baru.');
     else if(error.code==='email_not_confirmed')setMessage('Konfirmasi email terlebih dahulu, lalu masuk kembali.');
