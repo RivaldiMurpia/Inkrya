@@ -51,12 +51,14 @@ test('Provider failure has no retries, no fallback, no raw error exposure',async
   let calls=0;const prepared={config,model:createNebiusModel(config,'test',async()=>{calls++;return new Response('private text secret-key',{status:500})})};
   await assert.rejects(()=>generateKryaText(prepared,{system:'',prompt:'x',maxOutputTokens:100},context),/^Error: AI_GENERATION_FAILED$/);assert.equal(calls,1);
 });
-test('Selected Nano sends its non-thinking option without changing other models',async()=>{
+test('Selected Nano and Super send their non-thinking option without changing other models',async()=>{
   const nano={...config,id:'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B'};
-  for(const modelConfig of [nano,config]) {
+  const superModel={...config,id:'nvidia/nemotron-3-super-120b-a12b'};
+  for(const modelConfig of [nano,superModel,config]) {
     const request=async(url,init)=>{
       const body=JSON.parse(init.body);
-      assert.deepEqual(body.chat_template_kwargs,modelConfig===nano?{enable_thinking:false}:undefined);
+      assert.deepEqual(body.chat_template_kwargs,modelConfig!==config?{enable_thinking:false}:undefined);
+      if(modelConfig===superModel){assert.equal(body.temperature,1);assert.equal(body.top_p,0.95)}
       return completion();
     };
     await generateKryaText({config:modelConfig,model:createNebiusModel(modelConfig,'test',request)},{system:'Synthetic',prompt:'Fixture',maxOutputTokens:100},context);

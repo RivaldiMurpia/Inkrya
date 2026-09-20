@@ -9,13 +9,13 @@ export async function generateKryaText(prepared:Awaited<ReturnType<typeof prepar
   const finishTrace=await startTrace(context,prepared.config,input.prompt.length+input.system.length);
   const started=Date.now();
   try {
-    // Nano defaults to reasoning. Use its documented template switch so short
+    // Nano/Super default to reasoning. Use their documented template switch so short
     // writing/JSON requests spend the output budget on the final response.
     // Do not assume other Nemotron models support this option.
     const options=prepared.config.provider==='gateway'
       ? {reasoning:'none' as const}
-      : prepared.config.id==='nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B'
-        ? {providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}}}
+      : ['nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B','nvidia/nemotron-3-super-120b-a12b'].includes(prepared.config.id)
+        ? {providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}},...(prepared.config.id==='nvidia/nemotron-3-super-120b-a12b'?{temperature:1,topP:0.95}:{})}
         : {};
     const result=await generateText({model:prepared.model,system:input.system,prompt:input.prompt,maxOutputTokens:input.maxOutputTokens,maxRetries:0,abortSignal:AbortSignal.timeout(Math.min(input.timeoutMs??35000,45000)),...options});
     // Only final text is used; reasoning channels are not displayed, persisted or traced.

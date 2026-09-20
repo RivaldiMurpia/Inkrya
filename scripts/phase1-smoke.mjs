@@ -30,7 +30,7 @@ try {
   const routes=MODEL_TASKS.map(task=>resolveModelConfig(task));
   // Initial activation deliberately exercises one model. Independent role
   // overrides need their own evaluation before use.
-  for(const route of routes)assert.equal(route.id,'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B');
+  for(const route of routes)assert.equal(route.id,'nvidia/nemotron-3-super-120b-a12b');
   console.log('PHASE1_ROUTES',JSON.stringify(routes.map(({task,provider,id})=>({task,provider,model:id}))));
   const records=await mkdtemp(join(tmpdir(),'inkrya-phase1-'));
   const completed=[];
@@ -43,6 +43,10 @@ try {
     const recordPath=join(records,item.generationId+'.json');
     await writeFile(recordPath,JSON.stringify({id:item.generationId,case:item.name,status:'pending'}),{mode:0o600});
     const result=await generateKryaText(prepared,{system:item.system,prompt:item.prompt,maxOutputTokens:item.maxOutputTokens,timeoutMs:35000},context);
+    // Only this fixed synthetic diagnostic emits outputs. Application routes and
+    // LangSmith never log manuscript content, prompts, or model prose.
+    console.log('PHASE1_SYNTHETIC_OUTPUT',JSON.stringify({case:item.name,text:result.text}));
+    stage=item.name+':validation';
     assert.equal(result.tracing,'sent');
     assert.ok(Number.isFinite(result.usage.inputTokens)&&result.usage.inputTokens>0);
     assert.ok(Number.isFinite(result.usage.outputTokens)&&result.usage.outputTokens>0);
@@ -50,7 +54,6 @@ try {
       assert.ok(result.text.length>100);
       assert.ok(/Mira/.test(result.text)&&/Aruna/.test(result.text));
       assert.ok(!/^(?:Okay|Let me|We need|Analysis:|Here is)/i.test(result.text.trim()));
-      console.log('PHASE1_SYNTHETIC_PROSE',JSON.stringify({text:result.text}));
     } else if(item.name==='extraction') {
       const parsed=parseModelJSON(result.text);
       const valid=validateInsights(parsed,source.content);
