@@ -14,16 +14,17 @@ if (process.env.INKRYA_VERIFY_NEBIUS_BUILD === 'true') {
   }
 }
 
-// Inference must be opted into for one exact commit, not every future build.
-// Redeploying the same opted-in commit can repeat the four bounded smoke calls.
+// Diagnostics require one exact commit. Readback is the default and costs no
+// inference. Explicit mode=smoke additionally opts into four paid calls.
 const smokeCommit=process.env.INKRYA_VERIFY_PHASE1_COMMIT;
 if (!process.exitCode && /^[a-f0-9]{40}$/.test(smokeCommit||'') && smokeCommit===process.env.VERCEL_GIT_COMMIT_SHA) {
   if(process.env.VERCEL_ENV!=='preview'||process.env.VERCEL_GIT_COMMIT_REF!=='hackathon/nebius-2026') {
     console.error('Phase 1 smoke is restricted to the hackathon Preview branch.');
     process.exitCode=1;
   } else {
-    const script=fileURLToPath(new URL('./phase1-smoke.mjs',import.meta.url));
-    const result=spawnSync(process.execPath,['--experimental-strip-types',script,'--allow-credit-usage'],{stdio:'inherit',timeout:180000,env:process.env});
+    const paid=process.env.INKRYA_VERIFY_PHASE1_MODE==='smoke';
+    const script=fileURLToPath(new URL(paid?'./phase1-smoke.mjs':'./phase1-readback.mjs',import.meta.url));
+    const result=spawnSync(process.execPath,['--experimental-strip-types',script,...(paid?['--allow-credit-usage']:[])],{stdio:'inherit',timeout:180000,env:process.env});
     if(result.error||result.status!==0){console.error('Phase 1 activation smoke failed.');process.exitCode=1}
   }
 }
