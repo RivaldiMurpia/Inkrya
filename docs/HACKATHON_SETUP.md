@@ -59,7 +59,7 @@ The transport tests mock Nebius and LangSmith; they do not prove real credential
 
 The repository is `https://github.com/RivaldiMurpia/Inkrya`. Vercel's Git integration is confirmed. The initial README-only deployment failed with `missing_pages_app`. Complete source commit `d829eca98259fff4d791f023664d418068850ed6` resolved that error: deployment `dpl_4zPCcZ9SQ3LVPAVmWoS38ffnE1uy` is READY on `https://inkrya.vercel.app` (verified 2026-09-19).
 
-The deployed runtime reports Gateway selected and tracing disabled. The owner has reported adding API keys, but remote secret values/scopes were not inspected. Set the provider/model/tracing configuration described above in the intended environment and redeploy before the authenticated acceptance checks. Do not infer integration success from build success or key presence alone.
+Activation continued on 2026-09-20: Preview now selects Nebius with `nvidia/nemotron-3-super-120b-a12b` for all seven text roles and enables LangSmith tracing. Production remains Gateway. Credentials were used inside Vercel without exposing their values. See `PHASE1_ACTIVATION.md` for live evidence and remaining acceptance gates. Do not infer integration success from build success or key presence alone.
 
 Use `hackathon/nebius-2026` for subsequent implementation and Preview verification. The connected direct deploy operation returned `Tool deploy_to_vercel not found`; the Git integration is the available publishing path. Do not extract or repurpose connector credentials or fabricate deployment URLs. Record actual build and inference results before declaring this checkpoint released.
 
@@ -70,3 +70,11 @@ Use `hackathon/nebius-2026` for subsequent implementation and Preview verificati
 - [LangSmith manual instrumentation](https://docs.langchain.com/langsmith/annotate-code): explicit trace control. This implementation uses Client APIs and allowlisted metadata, not raw auto-tracing.
 
 Installed package source/types were checked for AI SDK generation, compatible-provider configuration and LangSmith Client methods. Pinned dependencies and the lockfile are required.
+
+## Bounded live diagnostics
+
+`scripts/phase1-smoke.mjs --allow-credit-usage` makes at most four sequential model calls (1,750 output tokens maximum in total; no automatic retries) against fixed synthetic prose, grounded Q&A, abstention and extraction fixtures. It uses production provider/generation/prompt/validation modules. Synthetic output is deliberately logged for human quality review; application prompts and manuscript contents remain excluded from logs and traces. A mechanical prose pass is not a writing-quality benchmark.
+
+For a Vercel build, set `INKRYA_VERIFY_PHASE1_COMMIT` to one exact commit SHA on the hackathon Preview branch. Read-only verification of the recorded runs is the default. Set `INKRYA_VERIFY_PHASE1_MODE=smoke` only to explicitly request new inference. Redeploying the same opted-in SHA in smoke mode repeats those calls. Clear/disable the SHA after collecting evidence. The historical `phase1-readback.mjs` fixture checks the four runs from commit `349d9a0`; it is not a general benchmark or proof about a later model change.
+
+The runtime keeps a two-second trace-delivery timeout; the read-only administrative diagnostic permits ten seconds per run. Neither changes the application's inference timeout or retries. The diagnostics do not log in, reserve an application database generation, exercise RLS or verify autosave. Those gates still need an authenticated browser session.

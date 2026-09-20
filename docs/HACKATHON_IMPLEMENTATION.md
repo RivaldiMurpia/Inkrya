@@ -1,8 +1,8 @@
 # Inkrya Hackathon Edition — implementation contract
 
-Updated: 2026-09-19. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is now the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist. The previous whole-chapter-summary task was interrupted before implementation and is not delivered.
+Updated: 2026-09-20. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is now the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist. The previous whole-chapter-summary task was interrupted before implementation and is not delivered.
 
-## Current increment: Phase 1 infrastructure (source deployed, provider activation pending)
+## Current increment: Phase 1 infrastructure (live provider diagnostics; authenticated acceptance pending)
 
 - `lib/ai/models.ts`: explicit provider switch and independent router/memory/planner/writer/continuity/critic/QA model configuration. All Nebius text model IDs must belong to the NVIDIA Nemotron family and appear in the authenticated model catalog. No guessed production model ID.
 - `lib/ai/provider.ts`: Vercel AI SDK OpenAI-compatible chat-completions adapter using the official Nebius endpoint. Catalog success caches for 60 seconds, scoped to a hash of the credential and endpoint. No automatic provider/model fallback. Redirects rejected.
@@ -24,7 +24,7 @@ Writers still review/copy suggestions; no agent writes manuscript/canon automati
 - Source import `d829eca98259fff4d791f023664d418068850ed6` was published through the confirmed GitHub integration. Production deployment `dpl_4zPCcZ9SQ3LVPAVmWoS38ffnE1uy` reached READY and serves `https://inkrya.vercel.app`. The initial README-only deployment had failed with `missing_pages_app`; the complete source import resolved that build error. The connected direct deploy tool remains unavailable; it was not used for this successful deployment.
 - Production HTTP checks on 2026-09-19 passed: homepage 200, Google/GitHub provider status enabled, and unauthenticated assistant/Memory/history requests rejected with 401. `/api/ai` reports provider `gateway`, configured true and tracing false. This verifies the new runtime is deployed; it does not verify Nebius or LangSmith. No signed-in browser E2E was performed in this checkpoint.
 - Automated tests use synthetic model IDs and mocked transports; they do not demonstrate live NVIDIA inference.
-- The owner reports that API keys were added to Vercel. Their values are not present locally and were not exposed by the plugin. The active runtime still selects Gateway and disables tracing. Browser access to Vercel settings requires a separate login; the chosen Google login reached a 502 Bad Gateway page and a fresh Vercel settings tab still shows login. No environment changes were made through that failed login.
+- On 2026-09-20 Vercel settings access succeeded. Preview selects Nebius Nemotron Super with tracing enabled. The authenticated catalog and four synthetic generations were exercised inside Vercel; production remains Gateway. See `PHASE1_ACTIVATION.md` for the exact evidence and failures. Secret values were never exposed.
 - Exact production model choice, provider-supported reasoning controls, latency, Indonesian writing quality, live token accounting and successful traces must be checked after activation.
 - Responses with explicit `<think>` blocks are rejected; normal reasoning channels are omitted. This is a safeguard, not a guarantee against every model emitting reasoning in its text channel.
 - LangSmith model-run success means generation completed; it does not mean the later citation validator accepted it or a user approved canon. Full workflow/step trace trees arrive with LangGraph.
@@ -62,4 +62,4 @@ Do not claim LangGraph, pgvector, Continuity Guardian, Story Doctor, Tavily rese
 
 ## Next executable gate
 
-Complete Vercel settings access and configure Nebius and LangSmith privately using `HACKATHON_SETUP.md`: provider selector, exact account-visible Nemotron model ID, tracing toggle and environment scope all matter in addition to API keys. Verify real inference through existing authenticated routes, record model/usage/trace evidence, and only then mark Phase 1 complete. Next implement pgvector and structured canon, not the full Guardian against incomplete lexical memory.
+Finish the authenticated acceptance checks in `HACKATHON_SETUP.md`: verify real inference through existing application routes, persisted model/usage/trace evidence, autosave and Memory review. Address the observed Indonesian prose quality issues before promotion. Only then mark Phase 1 complete. Next implement pgvector and structured canon, not the full Guardian against incomplete lexical memory.
