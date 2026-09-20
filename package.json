@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit --incremental false",
-    "test:unit": "node --experimental-strip-types --test tests/hackathon-ai.test.mjs tests/memory-validation.test.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/hackathon-ai.test.mjs tests/memory-validation.test.mjs tests/editor.test.mjs",
     "test:http": "node tests/http-smoke.mjs"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
     "@types/node": "22.19.0",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "jsdom": "30.1.0",
     "typescript": "5.9.3"
   }
 }

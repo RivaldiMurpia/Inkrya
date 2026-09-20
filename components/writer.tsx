@@ -12,7 +12,9 @@ export default function Writer({chapter,userId,onDirty,onSaved}:{chapter:Chapter
  const revision=useRef(chapter.revision_number),pending=useRef(false),saving=useRef(false),conflicted=useRef(false),timer=useRef<ReturnType<typeof setTimeout>|null>(null),titleRef=useRef(title),mutation=useRef(0),mounted=useRef(true);
  const saveRef=useRef<()=>Promise<void>>(async()=>{});const key=`inkrya:draft:${userId}:${chapter.id}`;
  const editor=useEditor({extensions:[StarterKit],immediatelyRender:false,content:chapter.content_json,editorProps:{attributes:{'aria-label':'Isi bab',class:'manuscript'}},onUpdate:({editor})=>{setWords(editor.getText().trim()?editor.getText().trim().split(/\s+/u).length:0);mark(editor.getJSON())}});
- useEffect(()=>{editor?.setEditable(!history)},[history,editor]);
+ // Editability/history are UI state. TipTap emits `update` by default here,
+ // which otherwise creates a phantom save (and a stale revision on remount).
+ useEffect(()=>{editor?.setEditable(!history,false)},[history,editor]);
  async function restoreVersion(v:{title:string;plain_text?:string;content_json?:Record<string,unknown>}){
   if(!editor||pending.current||saving.current||conflicted.current||!v.content_json)return false;
   saving.current=true;onDirty(true);setState('Memulihkan versi…');
