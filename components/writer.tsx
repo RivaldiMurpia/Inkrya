@@ -38,7 +38,7 @@ export default function Writer({chapter,userId,onDirty,onSaved}:{chapter:Chapter
   if(!editor||!pending.current||saving.current||conflicted.current)return;
   if(timer.current){clearTimeout(timer.current);timer.current=null}
   const content=editor.getJSON(),text=editor.getText(),savedTitle=titleRef.current;
-  const finish=()=>{pending.current=false;onDirty(false);try{localStorage.removeItem(key)}catch{};setState('Tersimpan')};
+  const finish=()=>{pending.current=false;onDirty(false);try{localStorage.removeItem(key)}catch{};setRecovery(false);setState('Tersimpan')};
   // Repeated update notifications are not new edits. Compare to the last
   // acknowledged document, never to a newer unconfirmed server revision.
   if(savedTitle===acknowledged.current.title&&sameDocument(content,acknowledged.current.content)){finish();return}

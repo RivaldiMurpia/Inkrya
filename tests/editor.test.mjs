@@ -102,3 +102,18 @@ test('Duplicate notifications during an in-flight save are acknowledged without 
   assert.equal(localStorage.getItem('inkrya:draft:synthetic-user:synthetic-chapter'),null);
  }finally{release();await h.close()}
 });
+
+test('A new acknowledged edit discards an un-restored stale recovery banner',async()=>{
+ const h=await setup();try{
+  localStorage.setItem('inkrya:draft:synthetic-user:synthetic-chapter',JSON.stringify({content:content('Stale synthetic draft.'),title:'Old',baseRevision:1}));
+  await h.show(false);await h.show(true);
+  assert.match(h.container.textContent,/Ada draft lokal yang belum tersimpan/);
+  await act(async()=>h.container.querySelector('[contenteditable]').editor.commands.setContent(content(source+' Mira mematikan lampu.')));
+  await act(async()=>button(h.container,' Simpan').click());
+  await act(async()=>pause(20));
+  assert.doesNotMatch(h.container.textContent,/Ada draft lokal yang belum tersimpan/);
+  assert.equal(localStorage.getItem('inkrya:draft:synthetic-user:synthetic-chapter'),null);
+  await act(async()=>button(h.container,'Riwayat').click());
+  assert.match(h.container.textContent,/RIWAYAT BAB/);
+ }finally{await h.close()}
+});
