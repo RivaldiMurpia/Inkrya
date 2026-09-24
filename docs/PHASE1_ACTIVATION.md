@@ -25,6 +25,16 @@ All three evaluation deployments ended **ERROR** by the opt-in QA gate. Experime
 
 The remaining gate is a **repeatable 4-case continue/rewrite acceptance pass**, including human review of the actual synthetic prose for length, natural Indonesian, continuity and requested constraints, followed by tests/typecheck/build/HTTP and a READY Preview on the approved code. Model or prompting decisions must be measured; keep Production Gateway and defer Phase 2 until this gate passes.
 
+### Writer-only Nemotron follow-up — 2026-09-24 UTC
+
+After the bounded Super prompt/budget trials above, the authenticated Nebius catalog confirmed `nvidia/Nemotron-3-Ultra-550b-a55b` and `nvidia/Nemotron-3_5-Lightning`. Only the **diagnostic Writer role** changed model; the deployed application's role configuration remained on Super. The original system, JSON request, non-thinking mode, temperature 1, top-p 0.95 and 260-token ceiling were held constant for a two-case pilot (`continue-radio` and `rewrite-radio`). Ultra returned **91/24** words, Lightning **43/42**, versus requested **55–70/45–60**. Both had human-visible failures: Ultra invented a photo and used malformed words; Lightning invented a cassette, changed Damar's action, and produced nonsensical phrases. Preview `dpl_3rSJwPJnZm9sXzUhT1Wm6zYjjQHL` failed its manual-review gate as intended.
+
+With Ultra fixed, changing only the system message to plain English instructions about Indonesian prose produced **57/28** words. The 57-word continuation passed mechanical length but moved the key to Mira's hand and included “gemeris.static”; it failed fact/language review. Adding only a sentence-count hint to the JSON request produced **47/31** words, with an invented moving antenna and a changed radio sound/new lamp. The two further Preview diagnostics `dpl_4qxwFMov8gZn8HAsGMFjhkpbNx97` and `dpl_Et6HuLwBdWtFWFUxjkvojHh6MuXh` failed by the same review gate. In total **8 bounded alternative-model calls**, zero automatic retries, seven mechanical length failures, and no human-accepted sample. No alternative reached the other two cases or a four-case acceptance run. See [the complete synthetic outputs and per-case assessment](evidence/phase1-prose-2026-09-24.md).
+
+NVIDIA's model cards for Super, Ultra and Lightning omit Indonesian from their supported-use language lists. This helps explain the measured failures but does not establish a universal impossibility. All routes remain on the last stable Super runtime, the Preview exact-commit paid toggle was disabled after the diagnostic, and **Phase 1 stays INCOMPLETE**. A different Writer candidate would need catalog verification, the full four cases and manual factual/linguistic review before any role override; do not promote Production or begin Phase 2.
+
+After this follow-up, **23/23 unit tests**, non-incremental typecheck, local Next build, and Gateway/Nebius signed-out AI/Memory/history HTTP smoke passed. Only the opt-in synthetic diagnostic and documentation changed; app inference, grounding/abstention, retrieval, Memory, autosave and Production configuration were not changed.
+
 ## Historical follow-up checkpoint — 2026-09-20 UTC
 
 **Phase 1 remains INCOMPLETE. Phase 2 has not started.** The ordered editor gate is still open; do not treat the following component-test results as a complete authenticated acceptance pass.
