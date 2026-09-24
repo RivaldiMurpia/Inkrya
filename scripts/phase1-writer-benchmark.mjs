@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {generateText} from 'ai';
 import {prepareModel} from '../lib/ai/provider.ts';
+import {cases} from './phase1-writer-cases.mjs';
 
 // IDs were observed in the authenticated account catalog on 2026-09-24.
 // One candidate and exactly four synthetic cases per Preview deployment.
@@ -12,12 +13,6 @@ const candidates={
  'writer-gemma-repeat':'google/gemma-3-27b-it',
  'writer-qwen35-repeat':'Qwen/Qwen3.5-397B-A17B',
 };
-const cases=[
- {name:'continue-radio',action:'continue',min:55,max:70,instruction:'Lanjutkan adegan ini dalam 55–70 kata, satu paragraf, sudut pandang orang ketiga. Mira mendengar tiga ketukan melalui radio. Damar tetap tidak mengetahui tempat kunci. Jangan kenalkan tokoh baru.',selection:'',context:'Mira tiba di Stasiun Aruna pada pukul tujuh malam. Ia menyimpan kunci kuningan di laci meja radio. Damar belum mengetahui lokasi kunci itu.'},
- {name:'rewrite-radio',action:'rewrite',min:45,max:60,instruction:'Tulis ulang menjadi 45–60 kata, satu paragraf, sudut pandang orang ketiga, lebih tegang namun tetap alami. Pertahankan fakta bahwa kunci berada di saku Mira dan radio hanya berdengung. Jangan tambahkan tokoh atau kejadian baru.',selection:'Mira masuk ke ruang radio. Kunci kuningan ada di saku jaketnya. Radio di meja berdengung pelan.',context:'Mira sendirian di ruang radio Stasiun Aruna. Kunci kuningan berada di saku jaketnya.'},
- {name:'continue-menara',action:'continue',min:50,max:65,instruction:'Lanjutkan adegan ini dalam 50–65 kata, satu paragraf, sudut pandang orang ketiga. Nala melihat lampu keempat padam dan berusaha memberi tahu Raka. Jangan ubah tempat surat atau muncul tokoh baru.',selection:'',context:'Nala dan Raka berjaga di menara pelabuhan. Empat lampu di ujung dermaga masih menyala. Surat untuk penjaga kapal tersimpan di bawah bangku dekat pintu menara.'},
- {name:'rewrite-surat',action:'rewrite',min:50,max:65,instruction:'Tulis ulang menjadi 50–65 kata, satu paragraf, sudut pandang orang ketiga, dengan suasana hujan yang tenang. Surat tetap di bawah bangku, belum dibaca oleh Nala atau Raka. Jangan tambahkan fakta baru.',selection:'Hujan terdengar di atap menara. Nala menunggu di dekat jendela. Raka duduk di lantai. Surat yang belum mereka baca masih di bawah bangku.',context:'Di menara pelabuhan, Nala dan Raka belum membaca surat yang tersimpan di bawah bangku.'},
-];
 
 // Same prompt, cases, token ceiling and default sampling for every candidate
 // and repeat. Qwen3.5's documented non-thinking template option is applied
