@@ -1,13 +1,13 @@
 # Phase 1 Plan C — small LoRA pilot, prepared 2026-09-24
 
-**Status: one user-authorized LoRA pilot submitted on 2026-09-24; Phase 1 INCOMPLETE.** See [pilot evidence and monitoring log](PILOT_V0_1.md), including the job ID, selected dataset and conditional serving quote. The last provider read showed Running; a subsequent browser access block prevents terminal readback for now. No dedicated endpoint, Writer route change, Production promotion or Phase 2 work has occurred. This corpus is entirely original, deterministic synthetic microfiction. The builder reads only its checked-in synthetic scene atoms. It never reads application projects or manuscripts. The cost-gate sections below record the evidence and proposal **before** the pilot and must not be read as current job status.
+**Status: one user-authorized LoRA pilot SUCCEEDED on 2026-09-24; Phase 1 INCOMPLETE.** See [final checkpoint, artifact and bill](PILOT_V0_1.md) and [second serving-cost gate](SERVING_GATE_V0_1.md). The model has not passed quality evaluation; checkpoint hosting is beta on request and its exact cost remains unresolved. No dedicated endpoint, Writer route change, Production promotion or Phase 2 work has occurred. This corpus is entirely original, deterministic synthetic microfiction. The builder reads only its checked-in synthetic scene atoms. It never reads application projects or manuscripts. The cost-gate sections below record the evidence and proposal **before** the pilot and must not be read as current job status.
 
 ## Files and split
 
 | File | Use | Count |
 | --- | --- | ---: |
 | `train.records.jsonl` | Auditable records with constraints, provenance, family and Indonesian reference | 120 |
-| `train.nebius.jsonl` | **Only prospective upload file**, Nebius conversational JSONL | 120 |
+| `train.nebius.jsonl` | **Only submitted training file**, Nebius conversational JSONL | 120 |
 | `heldout.records.jsonl` | External held-out evaluation prompts and sealed references | 30 |
 | `heldout.reference.jsonl` | Local evaluation reference, **never supply as `validation_file` or `training_file`** | 30 |
 
@@ -80,7 +80,7 @@ The authenticated SFT screen offered `gpt-oss-20b` under OpenAI and LoRA/full tr
 | Model/data | SFT or Custom Speculator; LoRA or Full; base model; required training dataset, optional validation dataset. |
 | Hyperparameters | Context length `8192` (menu `8192`, `16384`, `32768`, `65536`, `131072`); batch size `8` (menu `1`, `2`, `4`, `8`, `12`, `16`, `24`, `32`, `64`); learning rate input labeled **“Learning rate multiplier”** `0.00001`; epochs `3`; warmup ratio `0`; weight decay `0`; max gradient norm `1`; packing checked. The [API schema](https://docs.tokenfactory.nebius.com/post-training/how-to-fine-tune) uses **`learning_rate`**, not a `learning_rate_multiplier` key; epochs range 1–20 and default to 3. |
 | LoRA | Rank `8`, alpha `8`, dropout `0`. API rank range 8–128, alpha ≥8, dropout range 0–1. |
-| Output/integrations | Optional output model suffix and seed; optional Weights & Biases key/project and Hugging Face repo/token. No checkpoint interval, effective batch, or gradient accumulation control shown. Checkpoints become available through the jobs/checkpoints API after a successful run; none exists now. |
+| Output/integrations | Optional output model suffix and seed; optional Weights & Biases key/project and Hugging Face repo/token. No checkpoint interval, effective batch, or gradient accumulation control shown. At this **pre-submit configuration checkpoint**, no training checkpoint existed; the subsequent successful job has one, detailed in the pilot record. |
 
 Tokenization used the actual [Unsloth BF16 tokenizer](https://huggingface.co/unsloth/gpt-oss-20b-BF16/blob/main/tokenizer.json) (`tokenizer.json` SHA-256 `0614fe83...37d07d3`) and its [chat template](https://huggingface.co/unsloth/gpt-oss-20b-BF16/blob/main/chat_template.jinja) (SHA-256 `445c3a7c...b1ecc`), rendered at **2026-09-24 UTC** without a generation prompt. `scripts/plan-c-token-count.py` verifies both full SHA-256 values and dataset hashes, tokenizes every serialized conversation, and checks all 150 rows against the model's `o200k_harmony` tiktoken encoding: **0 mismatches**. The template supplies its default medium-reasoning system header and treats the JSONL system instruction as the model's developer instruction. This is the measured base-model serialization, **not a Nebius processed-token or invoice readback**; the service may apply different packing, padding, token accounting or minimum billing.
 
