@@ -1,8 +1,30 @@
-# Phase 1 activation evidence — 2026-09-20
+# Phase 1 activation evidence — 2026-09-24
 
-Branch: `hackathon/nebius-2026`. Infrastructure activation and authenticated generation/Memory checks passed. **Release acceptance remains incomplete**: Indonesian prose quality and an observed revision-conflict path need follow-up. Production was not promoted and remains Gateway.
+Branch: `hackathon/nebius-2026`. **Phase 1 remains INCOMPLETE solely on the Indonesian prose-quality gate. Phase 2 has not started.** The editor/revision, stale-source, application LangSmith readback, and regression gates below passed. Production was not promoted and remains Gateway. Earlier dated checkpoints in this file describe what was *then* pending; the current gate status is recorded here.
 
-## Follow-up checkpoint — 2026-09-20 UTC
+## Current checkpoint — 2026-09-24 UTC
+
+- Recovery-banner fix `cf15dede879c64fc76b3b93036a697f925584e5d` was present on the branch and Preview deployment `dpl_2P2nYHHWfLg32q3G48JqXMUjk417` was READY. Previous authenticated synthetic editor QA produced two sequential saves **8 → 9 → 10** without conflict. After the source revision changed, the Memory panel showed **“Sumber berubah”**, disabled approval, warned about the old revision, and **“Buka bab”** opened the latest revision. The 2026-09-24 component regression covers the same stale approval/navigation behavior without repeating live editor edits. These are the named synthetic fixtures only.
+- Persisted application generation IDs `25aa05a9-682c-469e-8133-11d960d9fb57`, `ef0e7bce-3d6a-4130-a691-906bb89a79d6`, `b6c22dd3-1a29-4967-b54d-60709c2fc336`, and `389fde8a-775e-45ee-bdf9-8254da9a25b3` were read back from **their exact LangSmith run IDs** in Preview deployment `dpl_76SmPy53tGmtsXLEeMz3sx7ouUP9` (`68638e0`, READY). Its build recorded four `PHASE1_TRACE` passes and `PHASE1_READBACK {"pass":true,"applicationRuns":4,"inferenceRequests":0}`. These were application runs, not build-fixture runs. A read-only check had confirmed four `ai_generations` rows `complete`, `trace_status=sent`, provider-qualified Super model, and their recorded usage/latency.
+- The readback asserted each run ID, workflow/task, `provider=nebius`, `model=nvidia/nemotron-3-super-120b-a12b`, pseudonymized project and user IDs, source count **1**, exact input/output/total tokens and latency, successful completion, and allowlisted metadata-only input/output fields. Project IDs match the two explicitly named synthetic projects below; user IDs in LangSmith are pseudonyms `0dc5222f4987485d2c70083b` and `c1576839504f5a9def9bc034`. Input contains only `input_characters`; output contains only `latency_ms`, `output_characters`, `success`, and numeric `usage`. There was no manuscript, raw prompt, or generated prose in these payloads; the checker also rejects known fixture strings. See `scripts/phase1-readback.mjs`. This validates these four runs and their schema, not every future trace.
+- Local regression after readback: **23/23 Node tests**, non-incremental typecheck, Next build, and Gateway/Nebius signed-out AI/Memory/history HTTP checks passed. The additional unit case asserts stale fact approval stays disabled and “Buka bab” targets the current revision. No application inference was made for trace readback.
+
+### Bounded Indonesian prose evaluation (synthetic only)
+
+The fixed corpus comprised two `continue` and two `rewrite` prompts in Indonesian with 45–70-word requested ranges, one paragraph, POV and continuity constraints. Human review checked natural diction, coherence, instruction/fact adherence and unnecessary foreign words in addition to mechanical length/completion checks. No generated text was applied to a chapter. The baseline and two candidate prompt/budget settings were tested on the same four cases on Nebius Super, without retries, and rejected when the Preview build gate failed:
+
+| Setting / deployment | Measured output words (expected, in case order) | Result |
+| --- | --- | --- |
+| Baseline in `dpl_J7nydKpPwUQqKzsgkXrvJtGKW9Gm` | **82, 57, 100, 44** (55–70, 50–65, 45–60, 50–65) | Three length failures, invented key location, nonsensical phrase, fabricated word-count suffix; fail. |
+| Shorter writing prompt in the same deployment | **100, 65, 97, 81** | Three length failures; foreign `Everything`, fabricated word-count suffix and continuity errors; fail. |
+| Shorter prompt and output cap in `dpl_87vsgnhwbNpAKRLmYt8f6pPfbdoq` | **73, 57, 65, 58** | Two length failures. Even passing lengths had `Both`/Japanese characters or invented facts; capped samples ended mid-sentence; fail. |
+| Writer thinking mode in `dpl_DE4kvZTTihCFkwJ7xcgW8tu9eHqh` | No prose sample; first `continue-radio` request returned a sanitized `DIAGNOSTIC_FAILED` | No quality result; build failed safely. Provider error details were deliberately suppressed, so the cause is unconfirmed. No automatic retry. |
+
+All three evaluation deployments ended **ERROR** by the opt-in QA gate. The last quality-evidenced READY Preview remained `dpl_76SmPy53tGmtsXLEeMz3sx7ouUP9` at this checkpoint. Experimental writing-prompt/model-setting changes were rolled back before the next deployment, and `INKRYA_VERIFY_PHASE1_COMMIT` was set to `disabled` for Preview so future builds do not make unexpected paid inference. Existing Q&A grounding, abstention validation and revision-safe Memory were not weakened. NVIDIA's Super model card does not list Indonesian among the supported languages; this is a plausible capability constraint, **not** proof that every Indonesian output fails. Do not mark prose or Phase 1 accepted from transport success or a single valid word count.
+
+The remaining gate is a **repeatable 4-case continue/rewrite acceptance pass**, including human review of the actual synthetic prose for length, natural Indonesian, continuity and requested constraints, followed by tests/typecheck/build/HTTP and a READY Preview on the approved code. Model or prompting decisions must be measured; keep Production Gateway and defer Phase 2 until this gate passes.
+
+## Historical follow-up checkpoint — 2026-09-20 UTC
 
 **Phase 1 remains INCOMPLETE. Phase 2 has not started.** The ordered editor gate is still open; do not treat the following component-test results as a complete authenticated acceptance pass.
 

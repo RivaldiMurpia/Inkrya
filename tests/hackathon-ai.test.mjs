@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {MODEL_TASKS,resolveModelConfig,configuredProvider,NEBIUS_BASE_URL,configurationErrorMessage} from '../lib/ai/models.ts';
 import {taskForAction} from '../lib/ai/router.ts';
-import {systemForAction,outputTokensForWriting,GENERAL_SYSTEM} from '../lib/ai/writing-prompts.ts';
 import {createNebiusModel,verifyNebiusModel,aiConfigurationStatus} from '../lib/ai/provider.ts';
 import {generateKryaText} from '../lib/ai/generate.ts';
 import {startTrace,safeTraceMetadata} from '../lib/langsmith/tracing.ts';
@@ -34,16 +33,6 @@ test('Every PRD text role resolves explicitly and role override wins',()=>{
   assert.equal(resolveModelConfig('planner',{...env,PLANNER_MODEL:'nvidia/Nemotron-planner-fixture'}).id,'nvidia/Nemotron-planner-fixture');
   assert.equal(taskForAction('ask'),'qa');assert.equal(taskForAction('analyze'),'memory');assert.equal(taskForAction('continue'),'writer');
 });
-test('Word-bounded writing preserves the other AI workflows and the global output ceiling',()=>{
-  assert.equal(systemForAction('chat'),GENERAL_SYSTEM);
-  assert.equal(systemForAction('brainstorm'),GENERAL_SYSTEM);
-  assert.notEqual(systemForAction('rewrite'),GENERAL_SYSTEM);
-  assert.equal(outputTokensForWriting('continue','Lanjutkan 55–70 kata.',true),900);
-  assert.equal(outputTokensForWriting('rewrite','Tulis ulang 45-60 kata.',true),900);
-  assert.equal(outputTokensForWriting('rewrite','Tulis ulang 45-60 kata.'),1400);
-  assert.equal(outputTokensForWriting('chat','55–70 kata'),1400);
-  assert.equal(outputTokensForWriting('rewrite','5–1000 kata'),1400);
-});
 test('Reject missing key, missing model, wrong family, and arbitrary endpoint',()=>{
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_API_KEY:''}),/API_KEY_MISSING/);
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_TEXT_MODEL:''}),/MODEL_MISSING/);
@@ -71,15 +60,14 @@ test('Provider failure has no retries, no fallback, no raw error exposure',async
   let calls=0;const prepared={config,model:createNebiusModel(config,'test',async()=>{calls++;return new Response('private text secret-key',{status:500})})};
   await assert.rejects(()=>generateKryaText(prepared,{system:'',prompt:'x',maxOutputTokens:100},context),/^Error: AI_GENERATION_FAILED$/);assert.equal(calls,1);
 });
-test('Super writer may think while Nano and structured Super tasks remain non-thinking',async()=>{
+test('Selected Nano and Super send their non-thinking option without changing other models',async()=>{
   const nano={...config,id:'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B'};
   const superModel={...config,id:'nvidia/nemotron-3-super-120b-a12b'};
-  const superQA={...superModel,task:'qa'};
-  for(const modelConfig of [nano,superModel,superQA,config]) {
+  for(const modelConfig of [nano,superModel,config]) {
     const request=async(url,init)=>{
       const body=JSON.parse(init.body);
-      assert.deepEqual(body.chat_template_kwargs,modelConfig!==config?{enable_thinking:modelConfig===superModel}:undefined);
-      if(modelConfig===superModel||modelConfig===superQA){assert.equal(body.temperature,1);assert.equal(body.top_p,0.95)}
+      assert.deepEqual(body.chat_template_kwargs,modelConfig!==config?{enable_thinking:false}:undefined);
+      if(modelConfig===superModel){assert.equal(body.temperature,1);assert.equal(body.top_p,0.95)}
       return completion();
     };
     await generateKryaText({config:modelConfig,model:createNebiusModel(modelConfig,'test',request)},{system:'Synthetic',prompt:'Fixture',maxOutputTokens:100},context);
