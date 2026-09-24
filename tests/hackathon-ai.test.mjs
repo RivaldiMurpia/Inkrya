@@ -42,9 +42,13 @@ test('Writer may select an account-verified Nebius model while reasoning roles r
     assert.throws(()=>resolveModelConfig(task,{...env,[`${task.toUpperCase()}_MODEL`]:'publisher/synthetic-writer'}),/NVIDIA_NEMOTRON_REQUIRED/);
   }
   assert.throws(()=>resolveModelConfig('writer',{...env,WRITER_MODEL:'https://malicious.invalid/model'}),/WRITER_MODEL_INVALID/);
+  assert.throws(()=>resolveModelConfig('writer',{...env,WRITER_MODEL:''}),/MODEL_MISSING/);
   const key='writer-account-test-key';
   await verifyNebiusModel(writer,key,async()=>Response.json({data:[{id:writer.id}]}));
   await assert.rejects(()=>verifyNebiusModel({...writer,id:'publisher/missing'},key,async()=>Response.json({data:[{id:writer.id}]})),/MODEL_UNAVAILABLE/);
+  const trace=safeTraceMetadata(context,writer);
+  assert.equal(trace.provider,'nebius');assert.equal(trace.task,'writer');assert.equal(trace.model,writer.id);
+  assert.equal(trace.retrieved_memory_count,context.sourceCount);assert.equal(trace.content_logging,false);
 });
 test('Reject missing key, missing model, wrong family, and arbitrary endpoint',()=>{
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_API_KEY:''}),/API_KEY_MISSING/);

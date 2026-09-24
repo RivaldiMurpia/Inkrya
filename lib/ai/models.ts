@@ -19,7 +19,10 @@ export function resolveModelConfig(task:ModelTask,env:Environment=process.env):M
   const baseURL=(env.NEBIUS_BASE_URL?.trim()||NEBIUS_BASE_URL).replace(/\/$/,'');
   // Do not send credentials/manuscripts to arbitrary URLs, even on configuration mistakes.
   if(baseURL!==NEBIUS_BASE_URL) throw Error('NEBIUS_BASE_URL_NOT_ALLOWED');
-  const id=(env[`${task.toUpperCase()}_MODEL`]||env.NEBIUS_TEXT_MODEL||'').trim();
+  // A present but blank role override is a configuration error; never fall
+  // through to the shared baseline after an operator selects that role.
+  const override=env[`${task.toUpperCase()}_MODEL`];
+  const id=(override===undefined?env.NEBIUS_TEXT_MODEL||'':override).trim();
   if(!id) throw Error('NEBIUS_MODEL_MISSING');
   // The official hackathon rule requires at least one NVIDIA model on Nebius,
   // not a single family for every role. Reasoning roles stay on Nemotron;
