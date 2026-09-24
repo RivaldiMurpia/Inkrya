@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {generateText} from 'ai';
+import {generateText,Output} from 'ai';
 import {prepareModel} from '../lib/ai/provider.ts';
 import {cases} from './phase1-writer-cases.mjs';
 import {runConstrainedCase} from './phase1-constrained-writer.mjs';
@@ -31,8 +31,11 @@ try {
   const options=prepared.config.id==='nvidia/nemotron-3-super-120b-a12b'||prepared.config.id==='Qwen/Qwen3.5-397B-A17B'
    ? {providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}}} : {};
   const started=Date.now();
-  const response=await generateText({model:prepared.model,system,prompt,maxOutputTokens,maxRetries:0,abortSignal:AbortSignal.timeout(25000),...options});
-  return {text:response.text,usage:response.usage,model:prepared.config.id,latencyMs:Date.now()-started,stage};
+  const structured=stage==='scene_plan'||stage.startsWith('semantic_');
+  // SDK's JSON output mode sends response_format=json_object to Nebius.
+  // Parser still applies our exact fixture locks / strict semantic schema.
+  const response=await generateText({model:prepared.model,system,prompt,maxOutputTokens,maxRetries:0,abortSignal:AbortSignal.timeout(25000),...(structured?{output:Output.json()}:{}) ,...options});
+  return {text:structured?JSON.stringify(response.output):response.text,usage:response.usage,model:prepared.config.id,latencyMs:Date.now()-started,stage};
  };
  const emit=(type,payload)=>console.log(`PHASE1_PLANB_${type}`,JSON.stringify({mode,writer:writerId,...payload}));
  // Two cases in parallel, then two more: no more than two simultaneous

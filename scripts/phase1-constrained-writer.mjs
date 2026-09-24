@@ -57,13 +57,13 @@ export async function runConstrainedCase(item,call,emit=()=>{}){
  let firstPass,repaired;
  try{
   const common={action:item.action,instruction:item.instruction,selected_text:item.selection,context:item.context,required_facts:item.requiredFacts,forbidden_changes:item.forbiddenChanges,allowed_beats:item.allowedBeats,pov:'third_person',target_word_range:{min:item.min,max:item.max}};
-  const rawPlan=await run('scene_plan','planner',planSystem,JSON.stringify(common),440);
+  const rawPlan=await run('scene_plan','planner',planSystem,JSON.stringify(common)+'\nReturn only a JSON object with these exact fields: {"required_facts": [...], "forbidden_changes": [...], "beats": [...], "pov": "third_person", "target_word_range": {"min": number, "max": number}}. Copy all three arrays verbatim from the corresponding input arrays. Do not write prose.',440);
   const plan=lockScenePlan(rawPlan,item);
-  const englishDraft=await run('english_draft','planner',draftSystem,JSON.stringify({source:common,locked_plan:plan}),300);
+  const englishDraft=await run('english_draft','planner',draftSystem,JSON.stringify({source:common,locked_plan:plan})+'\nWrite only the fact-faithful draft IN ENGLISH. Do not write Indonesian, JSON, analysis or word count.',300);
   const surfaceInput={english_draft:englishDraft,locked_plan:plan,word_range:{min:item.min,max:item.max},paragraphs:1};
   const assess=async(stage,output)=>{
    const mechanical=checkMechanical(output,item);
-   const semantic=checkSemantic(await run(stage,'qa',semanticSystem,JSON.stringify({source:common,locked_plan:plan,english_draft:englishDraft,indonesian_output:output}),220),item);
+   const semantic=checkSemantic(await run(stage,'qa',semanticSystem,JSON.stringify({source:common,locked_plan:plan,english_draft:englishDraft,indonesian_output:output})+'\nReturn ONLY JSON: {"draft_preserves_facts":boolean,"required_facts_preserved":boolean,"forbidden_changes_absent":boolean,"no_new_contradictory_facts":boolean}.',220),item);
    const result={text:output,mechanical,semantic,passed:mechanical.passed&&semantic.passed};
    emit('VERDICT',{case:item.name,stage,mechanical,semantic,passed:result.passed});
    return result;
