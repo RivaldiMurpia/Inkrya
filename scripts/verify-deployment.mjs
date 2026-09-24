@@ -23,9 +23,10 @@ if (!process.exitCode && /^[a-f0-9]{40}$/.test(smokeCommit||'') && smokeCommit==
     process.exitCode=1;
   } else {
     const mode=process.env.INKRYA_VERIFY_PHASE1_MODE;
-    const paid=mode==='smoke'||mode==='prose';
+    const writer=/^writer-(?:qwen|gemma|qwen35)(?:-repeat)?$/.test(mode||'');
+    const paid=mode==='smoke'||mode==='prose'||writer;
     const catalog=mode==='writer-catalog';
-    const script=fileURLToPath(new URL(catalog?'./nebius-preflight.mjs':mode==='prose'?'./phase1-prose-pilot.mjs':paid?'./phase1-smoke.mjs':'./phase1-readback.mjs',import.meta.url));
+    const script=fileURLToPath(new URL(catalog?'./nebius-preflight.mjs':writer?'./phase1-writer-benchmark.mjs':mode==='prose'?'./phase1-prose-pilot.mjs':paid?'./phase1-smoke.mjs':'./phase1-readback.mjs',import.meta.url));
     const result=spawnSync(process.execPath,['--experimental-strip-types',script,...(catalog?['--list-writer-candidates']:paid?['--allow-credit-usage']:[])],{stdio:'inherit',timeout:180000,env:process.env});
     if(result.error||result.status!==0){console.error('Phase 1 activation smoke failed.');process.exitCode=1}
   }
