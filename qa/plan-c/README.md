@@ -1,6 +1,6 @@
 # Phase 1 Plan C — small LoRA pilot, prepared 2026-09-24
 
-**Status: DATASET PREPARED; TRAINING NOT AUTHORIZED; Phase 1 INCOMPLETE.** No files have been uploaded to Nebius; no fine-tuning job or dedicated endpoint was created. This corpus is entirely original, deterministic synthetic microfiction. The builder reads only its checked-in synthetic scene atoms. It never reads application projects or manuscripts.
+**Status: DATASET AND TRAINING COST ESTIMATE PREPARED; TRAINING NOT AUTHORIZED; Phase 1 INCOMPLETE.** No files have been uploaded to Nebius; no fine-tuning job or dedicated endpoint was created. This corpus is entirely original, deterministic synthetic microfiction. The builder reads only its checked-in synthetic scene atoms. It never reads application projects or manuscripts.
 
 ## Files and split
 
@@ -26,7 +26,7 @@ Build: `node scripts/plan-c-build-corpus.mjs`. Validate: `node scripts/plan-c-va
 
 `scripts/plan-c-validate.mjs` rejects incorrect schemas, non-NFC/control/zero-width Unicode, missing constraints, missing/extra Nebius message fields, answer/prompt mismatches, answers outside the requested word range, multipart/incomplete answers, obvious English/meta leakage, duplicate prompts/answers, answer copied into a prompt, reused source drafts across scene families, near-duplicate 5-gram answers across scene families (Jaccard ≥ 0.70), shared families/settings across splits and direct reuse of the four earlier acceptance cases. All these checks are **mechanical**: they do not prove literary quality or semantic faithfulness. Seven independent corruption/positive tests cover the validator.
 
-Local verification on 2026-09-24: corpus validator **PASS**, **36/36** Node tests **PASS**, non-incremental typecheck **PASS**, and local Next.js build **PASS**. Application runtime and hosting settings were not modified, so no new paid inference or Preview deployment was triggered by the dataset preparation.
+Local verification on 2026-09-24: corpus validator **PASS**, **36/36** Node tests **PASS**, non-incremental typecheck **PASS**, and local Next.js build **PASS**. The cost-gate check reran the validator, the **36/36** tests and the tokenizer cross-check; no application runtime changed. No new paid inference or Preview deployment was triggered.
 
 The 150 references come from 50 original scene atoms rendered into three controlled phrasing variants. The wording is deliberately constrained. This is a **small pilot**, with repeated structure and only ten independent held-out scenes; held-out scores alone cannot prove naturalness or generalization to long fiction. A human Indonesian editor must inspect the complete training/evaluation references for idiom and unintended implications before upload. After any approved pilot, evaluate all 30 held-out prompts and the four existing acceptance prompts with blind human review of naturalness, coherence, preserved facts, length, one paragraph, unwanted foreign words, nonsensical phrasing and contradiction. Keep the current semantic/grounding validation unchanged. A training job alone never completes Phase 1.
 
@@ -37,16 +37,16 @@ Nebius's [current fine-tuning model list](https://docs.tokenfactory.nebius.com/p
 | User shorthand | Exact `model` value for a job | Language/cost judgment |
 | --- | --- | --- |
 | Meta-Llama-3.1-8B-Instruct | `meta-llama/Meta-Llama-3.1-8B-Instruct` | Smallest dense base; Meta does not list Indonesian among its eight supported languages; fine-tuning additional languages is allowed under its license and safeguards. |
-| gpt-oss-20b | `unsloth/gpt-oss-20b-BF16` | BF16 Unsloth packaging is the **Nebius training ID**. Harmony chat formatting/reasoning behavior deserves an explicit compatibility test; no Indonesian advantage is established here. |
-| Qwen3-30B-A3B-Instruct-2507 | `Qwen/Qwen3-30B-A3B-Instruct-2507` | Provisional linguistic favorite: Qwen's model card claims multilingual and creative-writing improvements. Its 30.5B total/3.3B active MoE parameters do **not** establish a cheaper training price. |
+| gpt-oss-20b | `unsloth/gpt-oss-20b-BF16` | **First costed pilot candidate.** BF16 Unsloth packaging is the Nebius training ID; its account-console 8K LoRA rate is verified below. Fine-tuning is an experiment, not a proven Indonesian prose improvement. |
+| Qwen3-30B-A3B-Instruct-2507 | `Qwen/Qwen3-30B-A3B-Instruct-2507` | Qwen's model card claims multilingual and creative-writing improvements, but its account-specific training price remains unverified; defer this alternate pilot. |
 
 The [Nebius supervised fine-tuning specification](https://docs.tokenfactory.nebius.com/post-training/how-to-fine-tune) uses `POST https://api.tokenfactory.nebius.com/v1/files` with multipart `purpose=fine-tune` and the uploaded `train.nebius.jsonl`, then `POST /v1/fine_tuning/jobs` with `model`, `training_file`, optional `validation_file`, optional `suffix`, optional `seed`, and nested `hyperparameters`. Its guide's older example spells the 8B Llama ID differently; the **current model list** is the source for the exact model ID, subject to an account catalog check before job creation. `learning_rate` is the documented current key; do not substitute a legacy `learning_rate_multiplier`. The job object returns `trained_tokens`, `trained_steps`, status and errors. These are documented API shapes, **not** claims of a live API validation or accepted paid request.
 
-Proposed request **after price, account availability, editorial review and explicit training approval** (placeholder training file ID, no code here issues the request):
+Proposed **one-epoch, LoRA-only** request **after a full human reference audit and explicit training approval** (placeholder file ID; no code here issues the request):
 
 ```json
 {
-  "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "model": "unsloth/gpt-oss-20b-BF16",
   "training_file": "<ID of approved train.nebius.jsonl>",
   "suffix": "inkrya-plan-c-synthetic-pilot",
   "seed": 42,
@@ -58,28 +58,49 @@ Proposed request **after price, account availability, editorial review and expli
     "n_epochs": 1,
     "batch_size": 8,
     "learning_rate": 0.00001,
+    "warmup_ratio": 0.1,
+    "weight_decay": 0,
+    "max_grad_norm": 1,
     "packing": true,
     "context_length": 8192
   }
 }
 ```
 
-Keep `validation_file` **absent**: all 30 held-out pairs must remain sealed for post-training evaluation. A single epoch limits pilot spend and memorization risk; do not start full fine-tuning. The [current Nebius model page](https://docs.tokenfactory.nebius.com/post-training/models) says fine-tuned model deployment is currently on **Dedicated endpoints**; a separate serving quote is required before any integration or deployment.
+Keep `validation_file` **absent**: all 30 held-out pairs must remain sealed for post-training evaluation. A single epoch, rank 8, alpha 8, 0.05 dropout, and default 1e-5 learning rate limit memorization risk; this small pilot may underfit and does not promise a 4/4 prose pass. Packing is enabled; because it combines short examples, the actual number of optimizer steps and effective examples per step cannot be inferred from the UI's batch size alone. No gradient accumulation control is exposed. The [current Nebius model page](https://docs.tokenfactory.nebius.com/post-training/models) says fine-tuned model deployment is currently on **Dedicated endpoints**; a separate serving quote is required before deployment.
 
-## Cost worksheet — quote required before approval
+## Authenticated console and token cost gate — 2026-09-24 UTC
 
-Official [Nebius pricing](https://tokenfactory.nebius.com/organization/prices) currently redirects to a sign-in-only console in this session. The public [post-training product page](https://nebius.com/services/token-factory/post-training) describes token-based pricing, but gives **no model-specific LoRA rate, minimum job charge or serving quote**. Therefore the exact pilot price is **unverified**, and no paid training approval should be requested yet.
+The signed-in account's [Prices page](https://tokenfactory.nebius.com/organization/prices) lists **Fine-tuning gpt-oss-20b BF16 LoRa 8K: $2.00 per 1M tokens**, region `eu-north1`, valid from **2025-12-01**. The selected model's SFT console sidebar independently shows **8,192 context / $2.00 per 1M** with the caveat “Prices are approximate. Actual cost depends on usage.” These prices exclude applicable taxes. Balance at inspection: **$25.00**, plus **$0.97 trial credits (23 days)**; trial eligibility for this job has not been asserted. [Nebius's billing guide](https://docs.tokenfactory.nebius.com/other-capabilities/billing-new) says a bank card may be charged when the configured threshold is met or if the monthly balance is negative, so the visible balance is not a spend cap.
 
-Measured training input: 120 examples, **192,839 UTF-8 JSONL bytes** and **21,000+ whitespace words** across system, user and assistant messages. Rough planning bound: **33,000–75,000 model tokens for one epoch**, based on 1.5–3 tokens/word plus chat-template/JSON overhead. This is **not** a measured count from the three model tokenizers; Nebius may bill differently for packing, validation or a job minimum. Final cost per model requires Nebius's authenticated LoRA rate and model-specific tokenization or an official pre-submit quote:
+The authenticated SFT screen offered `gpt-oss-20b` under OpenAI and LoRA/full training. We selected LoRA, opened **Training configuration** and **Integrations**, and stopped before **Create job**. No training dataset was selected. The [model list](https://docs.tokenfactory.nebius.com/post-training/models) supplies the fully qualified API ID `unsloth/gpt-oss-20b-BF16` (the UI shows the short label). The console parameters seen were:
 
-`estimated training USD = (verified billable training tokens / 1,000,000) × verified LoRA USD per million tokens + any verified minimum/compute fees`
+| Console group | Available controls and observed defaults |
+| --- | --- |
+| Model/data | SFT or Custom Speculator; LoRA or Full; base model; required training dataset, optional validation dataset. |
+| Hyperparameters | Context length `8192` (menu `8192`, `16384`, `32768`, `65536`, `131072`); batch size `8` (menu `1`, `2`, `4`, `8`, `12`, `16`, `24`, `32`, `64`); learning rate input labeled **“Learning rate multiplier”** `0.00001`; epochs `3`; warmup ratio `0`; weight decay `0`; max gradient norm `1`; packing checked. The [API schema](https://docs.tokenfactory.nebius.com/post-training/how-to-fine-tune) uses **`learning_rate`**, not a `learning_rate_multiplier` key; epochs range 1–20 and default to 3. |
+| LoRA | Rank `8`, alpha `8`, dropout `0`. API rank range 8–128, alpha ≥8, dropout range 0–1. |
+| Output/integrations | Optional output model suffix and seed; optional Weights & Biases key/project and Hugging Face repo/token. No checkpoint interval, effective batch, or gradient accumulation control shown. Checkpoints become available through the jobs/checkpoints API after a successful run; none exists now. |
 
-| Model | Verified LoRA rate / 1M trained tokens | Approx. one-epoch token range | Exact USD estimate |
-| --- | ---: | ---: | ---: |
-| Meta 8B | **Not publicly verified** | 33k–75k (model-specific count pending) | **Blocked** |
-| gpt-oss 20B | **Not publicly verified** | 33k–75k (model-specific count pending) | **Blocked** |
-| Qwen3 30B A3B | **Not publicly verified** | 33k–75k (model-specific count pending) | **Blocked** |
+Tokenization used the actual [Unsloth BF16 tokenizer](https://huggingface.co/unsloth/gpt-oss-20b-BF16/blob/main/tokenizer.json) (`tokenizer.json` SHA-256 `0614fe83...37d07d3`) and its [chat template](https://huggingface.co/unsloth/gpt-oss-20b-BF16/blob/main/chat_template.jinja) (SHA-256 `445c3a7c...b1ecc`), rendered at **2026-09-24 UTC** without a generation prompt. `scripts/plan-c-token-count.py` verifies both full SHA-256 values and dataset hashes, tokenizes every serialized conversation, and checks all 150 rows against the model's `o200k_harmony` tiktoken encoding: **0 mismatches**. The template supplies its default medium-reasoning system header and treats the JSONL system instruction as the model's developer instruction. This is the measured base-model serialization, **not a Nebius processed-token or invoice readback**; the service may apply different packing, padding, token accounting or minimum billing.
 
-Cost ranking cannot be asserted from parameter counts. Provisional first pilot is **Qwen3 30B A3B Instruct** based on the manufacturer's multilingual and creative-writing claims, while Llama 3.1 does not explicitly support Indonesian. This is a **suitability inference**, not a demonstrated prose win over the other two; its earlier large-Qwen direct-writing failures still stand. If Nebius's account-specific LoRA quote makes Qwen materially more expensive, compare the verified total before choosing. Do not spend or update `WRITER_MODEL` from this recommendation.
+| Corpus | Examples | Model tokens including chat template | Assistant content tokens | Max example | Submitted to training job? |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `train.nebius.jsonl` | 120 | **52,877** | 9,518 | 464 (≤8,192) | Only after approval |
+| `heldout.reference.jsonl` | 30 | **13,206** | 2,352 | 448 (≤8,192) | **No**; sealed for external evaluation |
 
-**Next decision gate:** obtain the three authenticated per-model LoRA tariffs, minimum fees, effective tokenizer/billable-token estimate and Dedicated serving cost; record exact one-epoch USD estimates and any credit cap; finish the reference-text human audit. Then present a priced pilot for approval. Until then, no upload, training request, deployment, or Phase 2 work.
+Reproduce without touching application data:
+
+```bash
+python3 -m venv /tmp/inkrya-count
+/tmp/inkrya-count/bin/pip install jinja2 tiktoken tokenizers
+curl -L https://huggingface.co/unsloth/gpt-oss-20b-BF16/raw/main/chat_template.jinja -o /tmp/inkrya-chat-template.jinja
+curl -L https://huggingface.co/unsloth/gpt-oss-20b-BF16/resolve/main/tokenizer.json -o /tmp/inkrya-tokenizer.json
+/tmp/inkrya-count/bin/python scripts/plan-c-token-count.py --chat-template /tmp/inkrya-chat-template.jinja --tokenizer /tmp/inkrya-tokenizer.json
+```
+
+With **one epoch**, no `validation_file`, and unchanged token count, the calculated token component is `52,877 × $2 / 1,000,000 = $0.105754` (**about $0.11 before tax**); held-out validation contributes **zero processed job tokens**. As a *hypothetical* one-pass validation billing scenario, `13,206 × $2 / 1,000,000 = $0.026412` extra; our proposed job does not include it. Two train epochs without validation would be **105,754 tokens / $0.211508**. A **$2 planning allowance** is ~18.9× the one-epoch token estimate and leaves $23 of the currently visible account balance, but it is **not a provider-enforced cap**. We did not find a minimum job charge or a validation-billing rule in the current [SFT](https://docs.tokenfactory.nebius.com/post-training/how-to-fine-tune), [dataset](https://docs.tokenfactory.nebius.com/post-training/datasets), [overview](https://docs.tokenfactory.nebius.com/post-training/overview) or [billing](https://docs.tokenfactory.nebius.com/other-capabilities/billing-new) documentation or in the inspected SFT console. **Absence of documentation does not prove there is no minimum**; exact invoice total and upper bound remain unknown. Dedicated serving, evaluation inference and taxes are separate and excluded.
+
+The [Nebius conversational format](https://docs.tokenfactory.nebius.com/post-training/datasets) requires one `.jsonl` conversation per line, a `messages` array, a final assistant answer, and ≤20GB via Files API. The 192,839-byte `train.nebius.jsonl` has exactly those fields and roles on all 120 lines; the local validator passes and the UI explicitly offers Conversational dataset uploads. No file was uploaded to the service, so **server acceptance has not been observed**. The four external acceptance cases remain out of both splits by the validator's reserved-name check, disjoint scene families/settings, and manual fixture review; no acceptance case is fed as training or validation data.
+
+**Next action only after approval and editorial reference audit:** upload `train.nebius.jsonl` with `POST /v1/files` and `purpose=fine-tune`, capture its file ID, then submit the proposed `POST /v1/fine_tuning/jobs` request (or select the dataset and press **Create job** in the SFT console). **The POST /jobs / Create job action starts the billable training job.** Stop and resolve any new provider minimum or pre-submit cost disclosure before submitting. No upload, job, deployment, Writer override, Production promotion, or Phase 2 work occurred in this cost gate.
