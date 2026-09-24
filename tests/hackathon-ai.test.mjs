@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {MODEL_TASKS,resolveModelConfig,configuredProvider,NEBIUS_BASE_URL,configurationErrorMessage} from '../lib/ai/models.ts';
 import {taskForAction} from '../lib/ai/router.ts';
+import {systemForAction,outputTokensForWriting,GENERAL_SYSTEM} from '../lib/ai/writing-prompts.ts';
 import {createNebiusModel,verifyNebiusModel,aiConfigurationStatus} from '../lib/ai/provider.ts';
 import {generateKryaText} from '../lib/ai/generate.ts';
 import {startTrace,safeTraceMetadata} from '../lib/langsmith/tracing.ts';
@@ -32,6 +33,15 @@ test('Every PRD text role resolves explicitly and role override wins',()=>{
   for(const task of MODEL_TASKS) assert.equal(resolveModelConfig(task,env).id,env.NEBIUS_TEXT_MODEL);
   assert.equal(resolveModelConfig('planner',{...env,PLANNER_MODEL:'nvidia/Nemotron-planner-fixture'}).id,'nvidia/Nemotron-planner-fixture');
   assert.equal(taskForAction('ask'),'qa');assert.equal(taskForAction('analyze'),'memory');assert.equal(taskForAction('continue'),'writer');
+});
+test('Word-bounded writing preserves the other AI workflows and the global output ceiling',()=>{
+  assert.equal(systemForAction('chat'),GENERAL_SYSTEM);
+  assert.equal(systemForAction('brainstorm'),GENERAL_SYSTEM);
+  assert.notEqual(systemForAction('rewrite'),GENERAL_SYSTEM);
+  assert.equal(outputTokensForWriting('continue','Lanjutkan 55–70 kata.'),138);
+  assert.equal(outputTokensForWriting('rewrite','Tulis ulang 45-60 kata.'),120);
+  assert.equal(outputTokensForWriting('chat','55–70 kata'),1400);
+  assert.equal(outputTokensForWriting('rewrite','5–1000 kata'),1400);
 });
 test('Reject missing key, missing model, wrong family, and arbitrary endpoint',()=>{
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_API_KEY:''}),/API_KEY_MISSING/);

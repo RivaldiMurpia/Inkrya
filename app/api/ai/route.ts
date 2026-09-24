@@ -3,7 +3,7 @@ import {generateKryaText} from '@/lib/ai/generate';
 import {prepareModel,aiConfigurationStatus} from '@/lib/ai/provider';
 import {taskForAction} from '@/lib/ai/router';
 import {configurationErrorMessage} from '@/lib/ai/models';
-import {systemForAction} from '@/lib/ai/writing-prompts';
+import {systemForAction,outputTokensForWriting} from '@/lib/ai/writing-prompts';
 import {boundContext,type Source} from '@/lib/ai-context';
 export const maxDuration=60;
 export async function GET(){return Response.json(await aiConfigurationStatus(),{headers:{'Cache-Control':'no-store'}})}
@@ -37,7 +37,7 @@ export async function POST(req:Request){
  const {data:run,error:reserveError}=await db.from('ai_generations').insert({project_id:projectId,action,prompt,model,context_sources:bounded.sources.map(s=>s.label)}).select('id').single();
  if(reserveError)return Response.json({error:reserveError.message.includes('AI_DAILY_LIMIT')?'Batas alpha: 20 permintaan dalam 24 jam.':reserveError.message.includes('AI_RATE_LIMIT')?'Tunggu 10 detik sebelum mencoba lagi.':'Riwayat tidak dapat disiapkan. Coba lagi.'},{status:429});
  try{
-  const result=await generateKryaText(prepared,{maxOutputTokens:1400,timeoutMs:35000,system:systemForAction(action),prompt:JSON.stringify({action,instruction,selected_text:selection,context:bounded.sources,context_truncated:bounded.truncated})},{generationId:run.id,projectId,userId:auth.user.id,sourceCount:bounded.sources.length,workflow:'krya-assistant'});
+  const result=await generateKryaText(prepared,{maxOutputTokens:outputTokensForWriting(action,instruction),timeoutMs:35000,system:systemForAction(action),prompt:JSON.stringify({action,instruction,selected_text:selection,context:bounded.sources,context_truncated:bounded.truncated})},{generationId:run.id,projectId,userId:auth.user.id,sourceCount:bounded.sources.length,workflow:'krya-assistant'});
   const {error}=await db.from('ai_generations').update({result:result.text,status:'complete',token_usage:{...result.usage,provider:result.provider,latency_ms:result.latencyMs,trace_status:result.tracing}}).eq('id',run.id);
   return Response.json({id:run.id,text:result.text,sources:bounded.sources.map(s=>s.label),truncated:bounded.truncated,warning:error?'Hasil belum tersimpan di riwayat. Salin hasil sebelum menutup.':result.tracing==='failed'?'Hasil tersimpan; trace observabilitas belum terkirim.':null});
  }catch{await db.from('ai_generations').update({status:'error'}).eq('id',run.id);return Response.json({error:'Model belum tersedia atau permintaan gagal. Periksa konfigurasi/kredit AI. Percobaan ini tetap dihitung dalam batas harian.'},{status:503})}
