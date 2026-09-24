@@ -38,8 +38,9 @@ test('Word-bounded writing preserves the other AI workflows and the global outpu
   assert.equal(systemForAction('chat'),GENERAL_SYSTEM);
   assert.equal(systemForAction('brainstorm'),GENERAL_SYSTEM);
   assert.notEqual(systemForAction('rewrite'),GENERAL_SYSTEM);
-  assert.equal(outputTokensForWriting('continue','Lanjutkan 55–70 kata.'),138);
-  assert.equal(outputTokensForWriting('rewrite','Tulis ulang 45-60 kata.'),120);
+  assert.equal(outputTokensForWriting('continue','Lanjutkan 55–70 kata.',true),900);
+  assert.equal(outputTokensForWriting('rewrite','Tulis ulang 45-60 kata.',true),900);
+  assert.equal(outputTokensForWriting('rewrite','Tulis ulang 45-60 kata.'),1400);
   assert.equal(outputTokensForWriting('chat','55–70 kata'),1400);
   assert.equal(outputTokensForWriting('rewrite','5–1000 kata'),1400);
 });
@@ -70,14 +71,15 @@ test('Provider failure has no retries, no fallback, no raw error exposure',async
   let calls=0;const prepared={config,model:createNebiusModel(config,'test',async()=>{calls++;return new Response('private text secret-key',{status:500})})};
   await assert.rejects(()=>generateKryaText(prepared,{system:'',prompt:'x',maxOutputTokens:100},context),/^Error: AI_GENERATION_FAILED$/);assert.equal(calls,1);
 });
-test('Selected Nano and Super send their non-thinking option without changing other models',async()=>{
+test('Super writer may think while Nano and structured Super tasks remain non-thinking',async()=>{
   const nano={...config,id:'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B'};
   const superModel={...config,id:'nvidia/nemotron-3-super-120b-a12b'};
-  for(const modelConfig of [nano,superModel,config]) {
+  const superQA={...superModel,task:'qa'};
+  for(const modelConfig of [nano,superModel,superQA,config]) {
     const request=async(url,init)=>{
       const body=JSON.parse(init.body);
-      assert.deepEqual(body.chat_template_kwargs,modelConfig!==config?{enable_thinking:false}:undefined);
-      if(modelConfig===superModel){assert.equal(body.temperature,1);assert.equal(body.top_p,0.95)}
+      assert.deepEqual(body.chat_template_kwargs,modelConfig!==config?{enable_thinking:modelConfig===superModel}:undefined);
+      if(modelConfig===superModel||modelConfig===superQA){assert.equal(body.temperature,1);assert.equal(body.top_p,0.95)}
       return completion();
     };
     await generateKryaText({config:modelConfig,model:createNebiusModel(modelConfig,'test',request)},{system:'Synthetic',prompt:'Fixture',maxOutputTokens:100},context);

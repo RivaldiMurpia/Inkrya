@@ -35,23 +35,24 @@ try{
   stage=item.name;
   const id=randomUUID();
   const path=join(records,id+'.json');
-  await writeFile(path,JSON.stringify({id,case:item.name,version:'after-v2',status:'pending'}),{mode:0o600});
+  await writeFile(path,JSON.stringify({id,case:item.name,version:'after-v3',status:'pending'}),{mode:0o600});
   const prompt=JSON.stringify({action:item.action,instruction:item.instruction,selected_text:item.selection,context:[{label:'Bab: synthetic (versi 1)',text:item.context}],context_truncated:false});
-  const result=await generateKryaText(prepared,{system:WRITING_SYSTEM,prompt,maxOutputTokens:outputTokensForWriting(item.action,item.instruction),timeoutMs:35000},{generationId:id,projectId:'inkrya-public-synthetic-prose',sourceCount:1,workflow:'provider-smoke'});
+  const result=await generateKryaText(prepared,{system:WRITING_SYSTEM,prompt,maxOutputTokens:outputTokensForWriting(item.action,item.instruction,true),timeoutMs:35000},{generationId:id,projectId:'inkrya-public-synthetic-prose',sourceCount:1,workflow:'provider-smoke'});
   const text=result.text.trim();
   const words=text.split(/\s+/u).length;
   const singleParagraph=!/\n\s*\n/u.test(text);
   const noMeta=!/^(?:#{1,6}\s|(?:Berikut|Tentu|Ini adalah|Jumlah kata)\b)/iu.test(text)&&!/\b(?:jumlah kata|word count)\s*[:：]/iu.test(text)&&!/\(\s*\d+\s+kata\s*\)\s*$/iu.test(text);
-  const noKnownLeakage=!/\b(?:inconscio|everything|reveal|headset|transmitter)\b/iu.test(text)&&!/[a-z][A-Z][a-z]/u.test(text);
+  const noKnownLeakage=!/\b(?:inconscio|everything|reveal|headset|transmitter|both)\b/iu.test(text)&&!/[a-z][A-Z][a-z]/u.test(text)&&!/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(text);
+  const completeSentence=/[.!?…][”"']?$/u.test(text);
   const lengthPass=words>=item.min&&words<=item.max;
-  const objectivePass=singleParagraph&&noMeta&&noKnownLeakage&&lengthPass;
+  const objectivePass=singleParagraph&&noMeta&&noKnownLeakage&&completeSentence&&lengthPass;
   if(!objectivePass)failures++;
-  const metrics={case:item.name,version:'after-v2',id,words,expected:`${item.min}-${item.max}`,singleParagraph,noMeta,noKnownLeakage,lengthPass,objectivePass,latencyMs:result.latencyMs,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
+  const metrics={case:item.name,version:'after-v3',id,words,expected:`${item.min}-${item.max}`,singleParagraph,noMeta,noKnownLeakage,completeSentence,lengthPass,objectivePass,latencyMs:result.latencyMs,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
   await writeFile(path,JSON.stringify({...metrics,status:'complete'}));
   console.log('PHASE1_PROSE_CASE',JSON.stringify(metrics));
-  console.log('PHASE1_PROSE_OUTPUT',JSON.stringify({case:item.name,version:'after-v2',text}));
+  console.log('PHASE1_PROSE_OUTPUT',JSON.stringify({case:item.name,version:'after-v3',text}));
  }
- console.log('PHASE1_PROSE_COMPARISON',JSON.stringify({syntheticCases:cases.length,inferenceRequests:cases.length,outputTokenCeiling:cases.reduce((sum,item)=>sum+outputTokensForWriting(item.action,item.instruction),0),candidateObjectiveFailures:failures,manualReviewRequired:true,comparedTo:'dpl_J7nydKpPwUQqKzsgkXrvJtGKW9Gm'}));
+ console.log('PHASE1_PROSE_COMPARISON',JSON.stringify({syntheticCases:cases.length,inferenceRequests:cases.length,outputTokenCeiling:cases.reduce((sum,item)=>sum+outputTokensForWriting(item.action,item.instruction,true),0),candidateObjectiveFailures:failures,manualReviewRequired:true,comparedTo:'dpl_87vsgnhwbNpAKRLmYt8f6pPfbdoq'}));
  if(failures)process.exitCode=1;
 }catch{
  // Provider errors can include request content/keys. Never print raw exceptions.

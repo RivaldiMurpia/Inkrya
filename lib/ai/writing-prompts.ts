@@ -10,13 +10,13 @@ export function systemForAction(action:'chat'|'rewrite'|'continue'|'brainstorm')
  return action==='rewrite'||action==='continue'?WRITING_SYSTEM:GENERAL_SYSTEM;
 }
 
-// An explicit word range can constrain a short writing request before it
-// reaches the model's much larger general 1,400-token output allowance.
-export function outputTokensForWriting(action:'chat'|'rewrite'|'continue'|'brainstorm',instruction:string){
- if(action!=='rewrite'&&action!=='continue')return 1400;
+// Reserve room for Super's private reasoning when an explicit word range is
+// requested. Leave other providers and workflows on their existing budget.
+export function outputTokensForWriting(action:'chat'|'rewrite'|'continue'|'brainstorm',instruction:string,superWriter=false){
+ if(!superWriter||(action!=='rewrite'&&action!=='continue'))return 1400;
  const range=instruction.match(/\b(\d{1,4})\s*(?:[-–—]|hingga|sampai)\s*(\d{1,4})\s+kata\b/iu);
  if(!range)return 1400;
  const low=Number(range[1]),high=Number(range[2]);
  if(low<20||high<low||high>700)return 1400;
- return Math.min(1400,Math.max(90,Math.ceil(high*1.8)+12));
+ return Math.min(1400,Math.max(900,Math.ceil(high*1.8)+450));
 }

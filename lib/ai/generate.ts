@@ -9,13 +9,13 @@ export async function generateKryaText(prepared:Awaited<ReturnType<typeof prepar
   const finishTrace=await startTrace(context,prepared.config,input.prompt.length+input.system.length);
   const started=Date.now();
   try {
-    // Nano/Super default to reasoning. Use their documented template switch so short
-    // writing/JSON requests spend the output budget on the final response.
-    // Do not assume other Nemotron models support this option.
+    // Keep reasoning off for short structured QA/extraction. Super's writer
+    // route uses the documented thinking mode to plan prose constraints.
+    // Only final text is returned; reasoning is never persisted or traced.
     const options=prepared.config.provider==='gateway'
       ? {reasoning:'none' as const}
       : ['nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B','nvidia/nemotron-3-super-120b-a12b'].includes(prepared.config.id)
-        ? {providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}},...(prepared.config.id==='nvidia/nemotron-3-super-120b-a12b'?{temperature:1,topP:0.95}:{})}
+        ? {providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:prepared.config.id==='nvidia/nemotron-3-super-120b-a12b'&&prepared.config.task==='writer'}}},...(prepared.config.id==='nvidia/nemotron-3-super-120b-a12b'?{temperature:1,topP:0.95}:{})}
         : {};
     const result=await generateText({model:prepared.model,system:input.system,prompt:input.prompt,maxOutputTokens:input.maxOutputTokens,maxRetries:0,abortSignal:AbortSignal.timeout(Math.min(input.timeoutMs??35000,45000)),...options});
     // Only final text is used; reasoning channels are not displayed, persisted or traced.
