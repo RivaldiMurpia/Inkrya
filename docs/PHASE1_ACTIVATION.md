@@ -2,6 +2,10 @@
 
 Branch: `hackathon/nebius-2026`. **Phase 1 remains INCOMPLETE solely on the Indonesian prose-quality gate. Phase 2 has not started.** The editor/revision, stale-source, application LangSmith readback, and regression gates below passed. Production was not promoted and remains Gateway. Earlier dated checkpoints in this file describe what was *then* pending; the current gate status is recorded here.
 
+## Role-specialized Writer investigation — 2026-09-24 UTC
+
+The [official Devpost rules](https://nebiusglobalaihackathon.devpost.com/rules) require a running Nebius application using *at least one* NVIDIA open-source model; they do not impose Nemotron on every text role. The repository's all-role Nemotron rule was our own extra constraint. Reasoning routes remain NVIDIA Nemotron through Nebius; only the Writer role may select a different authenticated-catalog Nebius model. The provider, privacy-preserving trace, grounding/abstention validation, and explicit no-fallback contract remain. No Writer candidate has been approved or deployed as the active model yet; the four-case gate remains open. This checkpoint adds a read-only, exact-commit Preview catalog diagnostic to discover actual account IDs before benchmarking.
+
 ## Current checkpoint — 2026-09-24 UTC
 
 - Recovery-banner fix `cf15dede879c64fc76b3b93036a697f925584e5d` was present on the branch and Preview deployment `dpl_2P2nYHHWfLg32q3G48JqXMUjk417` was READY. Previous authenticated synthetic editor QA produced two sequential saves **8 → 9 → 10** without conflict. After the source revision changed, the Memory panel showed **“Sumber berubah”**, disabled approval, warned about the old revision, and **“Buka bab”** opened the latest revision. The 2026-09-24 component regression covers the same stale approval/navigation behavior without repeating live editor edits. These are the named synthetic fixtures only.

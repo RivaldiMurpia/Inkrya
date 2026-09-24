@@ -21,13 +21,19 @@ export function resolveModelConfig(task:ModelTask,env:Environment=process.env):M
   if(baseURL!==NEBIUS_BASE_URL) throw Error('NEBIUS_BASE_URL_NOT_ALLOWED');
   const id=(env[`${task.toUpperCase()}_MODEL`]||env.NEBIUS_TEXT_MODEL||'').trim();
   if(!id) throw Error('NEBIUS_MODEL_MISSING');
-  if(!/^nvidia\/[a-z0-9._-]*nemotron[a-z0-9._-]*$/i.test(id)) throw Error('NVIDIA_NEMOTRON_REQUIRED');
-  return {provider:'nebius',id,task,baseURL,label:`NVIDIA Nemotron · Nebius (${task})`};
+  // The official hackathon rule requires at least one NVIDIA model on Nebius,
+  // not a single family for every role. Reasoning roles stay on Nemotron;
+  // Writer may use a separately verified Nebius catalog model for Indonesian.
+  const nemotron=/^nvidia\/[a-z0-9._-]*nemotron[a-z0-9._-]*$/i.test(id);
+  if(task==='writer') {
+    if(!/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i.test(id)) throw Error('NEBIUS_WRITER_MODEL_INVALID');
+  } else if(!nemotron) throw Error('NVIDIA_NEMOTRON_REQUIRED');
+  return {provider:'nebius',id,task,baseURL,label:`${nemotron?'NVIDIA Nemotron':id} · Nebius (${task})`};
 }
 
 export function configurationErrorMessage(error:unknown) {
   const code=error instanceof Error?error.message:'';
-  if(code.startsWith('NEBIUS_')||code==='NVIDIA_NEMOTRON_REQUIRED') return 'Konfigurasi atau akses NVIDIA Nemotron di Nebius belum siap. Hubungi pemilik aplikasi; provider lain tidak dipakai otomatis.';
+  if(code.startsWith('NEBIUS_')||code==='NVIDIA_NEMOTRON_REQUIRED') return 'Konfigurasi atau akses model yang dipilih di Nebius belum siap. Hubungi pemilik aplikasi; model lain tidak dipakai otomatis.';
   if(code==='INVALID_AI_PROVIDER') return 'Konfigurasi provider AI tidak valid.';
   return 'Model AI belum tersedia atau konfigurasi belum dapat diverifikasi. Coba lagi nanti.';
 }

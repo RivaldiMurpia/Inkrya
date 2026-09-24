@@ -33,10 +33,23 @@ test('Every PRD text role resolves explicitly and role override wins',()=>{
   assert.equal(resolveModelConfig('planner',{...env,PLANNER_MODEL:'nvidia/Nemotron-planner-fixture'}).id,'nvidia/Nemotron-planner-fixture');
   assert.equal(taskForAction('ask'),'qa');assert.equal(taskForAction('analyze'),'memory');assert.equal(taskForAction('continue'),'writer');
 });
+test('Writer may select an account-verified Nebius model while reasoning roles require Nemotron',async()=>{
+  const writer=resolveModelConfig('writer',{...env,WRITER_MODEL:'publisher/synthetic-writer'});
+  assert.equal(writer.id,'publisher/synthetic-writer');
+  assert.match(writer.label,/Nebius \(writer\)/);
+  assert.equal(resolveModelConfig('planner',env).id,env.NEBIUS_TEXT_MODEL);
+  for(const task of MODEL_TASKS.filter(task=>task!=='writer')) {
+    assert.throws(()=>resolveModelConfig(task,{...env,[`${task.toUpperCase()}_MODEL`]:'publisher/synthetic-writer'}),/NVIDIA_NEMOTRON_REQUIRED/);
+  }
+  assert.throws(()=>resolveModelConfig('writer',{...env,WRITER_MODEL:'https://malicious.invalid/model'}),/WRITER_MODEL_INVALID/);
+  const key='writer-account-test-key';
+  await verifyNebiusModel(writer,key,async()=>Response.json({data:[{id:writer.id}]}));
+  await assert.rejects(()=>verifyNebiusModel({...writer,id:'publisher/missing'},key,async()=>Response.json({data:[{id:writer.id}]})),/MODEL_UNAVAILABLE/);
+});
 test('Reject missing key, missing model, wrong family, and arbitrary endpoint',()=>{
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_API_KEY:''}),/API_KEY_MISSING/);
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_TEXT_MODEL:''}),/MODEL_MISSING/);
-  assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_TEXT_MODEL:'other/model'}),/NVIDIA_NEMOTRON_REQUIRED/);
+  assert.throws(()=>resolveModelConfig('qa',{...env,NEBIUS_TEXT_MODEL:'other/model'}),/NVIDIA_NEMOTRON_REQUIRED/);
   assert.throws(()=>resolveModelConfig('writer',{...env,NEBIUS_BASE_URL:'https://attacker.example/v1'}),/NOT_ALLOWED/);
 });
 test('Catalog checks availability and never leak provider response text',async()=>{
