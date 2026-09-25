@@ -1,5 +1,7 @@
 # Plan C v0.1 serving and evaluation cost gate — 2026-09-24
 
+> **2026-09-25 update:** The user supplied Nebius Support's definitive route answer: no standard shared/serverless LoRA serving or cheaper Token Factory evaluation; a Dedicated endpoint would require merging to full weights and beta custom weights with no published minimum GPU. Dedicated creation is off the table. The current one-hour, two-case **private Nebius AI Cloud proposal**, direct LoRA runtime, shutdown controls and updated $4.32/$4.97 planning estimate are in [PRIVATE_CANARY_GATE.md](PRIVATE_CANARY_GATE.md). All Dedicated scenarios and the older four-/six-hour VM scenarios in this dated file are historical analysis, not a current authorization.
+
 **Decision: NOT APPROVABLE YET for a paid endpoint.** The one approved SFT LoRA job `ftjob-48927a40e28f47ba811ed3e2ac9845d6` succeeded. Its [checkpoint and billing evidence](PILOT_V0_1.md) do not prove that the adapter is deployable on a particular GPU/template or establish the exact all-in cost. No endpoint, additional training, inference, Writer override, Production promotion, or Phase 2 work has been performed.
 
 ## Serving routes inspected
