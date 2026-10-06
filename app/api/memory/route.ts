@@ -17,9 +17,15 @@ async function embedPendingChunks(db:Awaited<ReturnType<typeof userDatabase>>,pr
  if(!db)return;
  let config;try{config=resolveEmbeddingConfig()}catch{return}
  if(!config)return;
- const {data}=await db.rpc('memory_pending_embeddings',{p_project_id:projectId,p_model:EMBEDDING_MODEL_LABEL,p_limit:40});
- for(const chunk of (data??[]) as PendingEmbedding[]){
-  try{const embedding=await createEmbedding(chunk.content,config.model,config.apiKey);await db.from('story_embeddings').upsert({project_id:projectId,chunk_id:chunk.id,source_revision:chunk.source_revision,source_hash:chunk.source_hash,model:EMBEDDING_MODEL_LABEL,embedding},{onConflict:'chunk_id,model'});}catch{return}
+ // Two rounds: the first pass may reveal chunks invalidated mid-run; the second
+ // pass is bounded by p_limit, keeping the index response under maxDuration.
+ for(let round=0;round<2;round++){
+  const {data}=await db.rpc('memory_pending_embeddings',{p_project_id:projectId,p_model:EMBEDDING_MODEL_LABEL,p_limit:40});
+  const pending=(data??[]) as PendingEmbedding[];
+  if(!pending.length)break;
+  for(const chunk of pending){
+   try{const embedding=await createEmbedding(chunk.content,config.model,config.apiKey);await db.from('story_embeddings').upsert({project_id:projectId,chunk_id:chunk.id,source_revision:chunk.source_revision,source_hash:chunk.source_hash,model:EMBEDDING_MODEL_LABEL,embedding},{onConflict:'chunk_id,model'});}catch{return}
+  }
  }
 }
 
@@ -39,8 +45,9 @@ export async function POST(req:Request){
  const {data:p}=await db.from('projects').select('id').eq('id',projectId).maybeSingle();if(!p)return Response.json({error:'Proyek tidak ditemukan.'},{status:404});
  if(action==='index'){const {data,error}=await db.rpc('process_memory',{p_project_id:projectId,p_force:true});
   if(error)return Response.json({error:'Indeks gagal diperbarui.'},{status:503});
-  // Fire-and-forget semantic backfill; response and lexical index stay unaffected by embedding failures.
-  void embedPendingChunks(db,projectId).catch(()=>{});
+  // Await embedding backfill before returning — fire-and-forget is killed when the
+  // serverless function returns. Errors are swallowed so lexical index always succeeds.
+  await embedPendingChunks(db,projectId);
   return Response.json(data);
  }
  let sources:MemorySource[]=[];
