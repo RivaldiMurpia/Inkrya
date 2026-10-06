@@ -8,6 +8,7 @@ import {generateKryaText} from '../lib/ai/generate.ts';
 import {startTrace,safeTraceMetadata} from '../lib/langsmith/tracing.ts';
 import {createEmbedding,EMBEDDING_DIMENSIONS} from '../lib/ai/embed.ts';
 import {authReturnUrl} from '../lib/auth-redirect.ts';
+import {MEMORY_ASK} from '../lib/memory-prompts.ts';
 
 test('OAuth returns to the exact owned Preview origin and rejects lookalike hosts',()=>{
  const preview='https://inkrya-git-hackathon-nebius-2026-rivaldi-murpias-projects.vercel.app';
@@ -131,4 +132,7 @@ test('Embedding call sends documented body only and validates dimension',async()
   await assert.rejects(()=>createEmbedding('x','Qwen/Qwen3-Embedding-8B','k',async()=>new Response('secret body',{status:503})),/REQUEST_FAILED/);
   await assert.rejects(()=>createEmbedding('   ','Qwen/Qwen3-Embedding-8B','k',request),/INPUT_INVALID/);
   await assert.rejects(()=>createEmbedding('a'.repeat(16001),'Qwen/Qwen3-Embedding-8B','k',request),/INPUT_INVALID/);
+});
+test('Ask prompt contract requires status and forbids guessing',()=>{
+  assert.match(MEMORY_ASK,/status/);assert.match(MEMORY_ASK,/NOT_ESTABLISHED/);assert.match(MEMORY_ASK,/CONTRADICTION/);assert.match(MEMORY_ASK,/NO_EVIDENCE/);assert.match(MEMORY_ASK,/story_time/);
 });
