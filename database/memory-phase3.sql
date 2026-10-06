@@ -114,7 +114,7 @@ drop function if exists public.memory_overview(uuid);
 create function public.memory_overview(p_project_id uuid) returns jsonb
 language plpgsql stable security invoker set search_path='' as $$
 begin
- if auth.uid() is null or not exists(select 1 from public.projects where id=p_project_id and owner_id=auth.uid()) then raise exception 'NOT_FOUND';end if;
+ if auth.uid() is null or not exists(select 1 from public.projects p where p.id=p_project_id and p.owner_id=auth.uid()) then raise exception 'NOT_FOUND';end if;
  return jsonb_build_object(
  'jobs',coalesce((select jsonb_agg(x) from (select j.*,c.title,c.story_time from public.memory_jobs j join public.chapters c on c.id=j.chapter_id where j.project_id=p_project_id order by c.position) x),'[]'::jsonb),
  'chunks',coalesce((select jsonb_agg(x) from (select s.id,s.chapter_id,c.title,s.source_revision,s.chunk_index,(i.id is not null) analyzed from public.story_chunks s join public.chapters c on c.id=s.chapter_id left join public.memory_insights i on i.chunk_id=s.id where s.project_id=p_project_id and s.source_revision=c.revision_number and s.source_hash=md5(c.plain_text) order by c.position,s.chunk_index limit 500) x),'[]'::jsonb),
@@ -133,7 +133,7 @@ create function public.current_timeline_events(p_project_id uuid,p_preferred_chu
 returns table(id uuid,story_time text,title text,event_type text,chapter_id uuid,quote text,chunk_id uuid)
 language plpgsql stable security invoker set search_path='' as $$
 begin
- if auth.uid() is null or not exists(select 1 from public.projects where id=p_project_id and owner_id=auth.uid()) then raise exception 'NOT_FOUND';end if;
+ if auth.uid() is null or not exists(select 1 from public.projects p where p.id=p_project_id and p.owner_id=auth.uid()) then raise exception 'NOT_FOUND';end if;
  return query
  with safe as (
   select e.id,e.story_time,e.title,e.event_type,e.chapter_id,e.quote,e.chunk_id
@@ -144,13 +144,17 @@ begin
   where e.project_id=p_project_id and e.status='CANON'
    and s.source_revision=c.revision_number and s.source_hash=md5(c.plain_text) and j.status='ready'
  ),preferred as (
-  select * from safe where chunk_id=any(p_preferred_chunk_ids)
+  select * from safe where safe.chunk_id=any(p_preferred_chunk_ids)
  )
- select id,story_time,title,event_type,chapter_id,quote,chunk_id from preferred
- union all
- select id,story_time,title,event_type,chapter_id,quote,chunk_id from safe
- where chunk_id<>all(coalesce(p_preferred_chunk_ids,'{}'::uuid[]))
- order by story_time limit 20;
+ -- Fully qualified references: OUT parameters (id, story_time, ...) share names with
+ -- columns, so unqualified identifiers raise 42702 "ambiguous" under search_path=''.
+ select u.id,u.story_time,u.title,u.event_type,u.chapter_id,u.quote,u.chunk_id from (
+  select preferred.id,preferred.story_time,preferred.title,preferred.event_type,preferred.chapter_id,preferred.quote,preferred.chunk_id from preferred
+  union all
+  select safe.id,safe.story_time,safe.title,safe.event_type,safe.chapter_id,safe.quote,safe.chunk_id from safe
+  where safe.chunk_id<>all(coalesce(p_preferred_chunk_ids,'{}'::uuid[]))
+ ) u
+ order by u.story_time limit 20;
 end $$;
 revoke all on function public.current_timeline_events(uuid,uuid[]) from public;
 grant execute on function public.current_timeline_events(uuid,uuid[]) to authenticated;
@@ -159,7 +163,7 @@ create function public.current_character_knowledge(p_project_id uuid,p_character
 returns table(id uuid,character_id uuid,character_name text,statement text,knows boolean,learned_at_story_time text,quote text,chunk_id uuid)
 language plpgsql stable security invoker set search_path='' as $$
 begin
- if auth.uid() is null or not exists(select 1 from public.projects where id=p_project_id and owner_id=auth.uid()) then raise exception 'NOT_FOUND';end if;
+ if auth.uid() is null or not exists(select 1 from public.projects p where p.id=p_project_id and p.owner_id=auth.uid()) then raise exception 'NOT_FOUND';end if;
  if p_character_ids is null or array_length(p_character_ids,1) is null then return;end if;
  return query
  select k.id,k.character_id,ch.name as character_name,k.statement,k.knows,k.learned_at_story_time,k.quote,k.chunk_id
