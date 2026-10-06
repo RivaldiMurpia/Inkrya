@@ -37,6 +37,18 @@ export function resolveModelConfig(task:ModelTask,env:Environment=process.env):M
 export function configurationErrorMessage(error:unknown) {
   const code=error instanceof Error?error.message:'';
   if(code.startsWith('NEBIUS_')||code==='NVIDIA_NEMOTRON_REQUIRED') return 'Konfigurasi atau akses model yang dipilih di Nebius belum siap. Hubungi pemilik aplikasi; model lain tidak dipakai otomatis.';
+  if(code.startsWith('EMBED_')) return 'Model embedding untuk Memory semantik belum siap. Hubungi pemilik aplikasi.';
   if(code==='INVALID_AI_PROVIDER') return 'Konfigurasi provider AI tidak valid.';
   return 'Model AI belum tersedia atau konfigurasi belum dapat diverifikasi. Coba lagi nanti.';
+}
+
+// Embedding config — separate from text model; no Nemotron constraint.
+export function resolveEmbeddingConfig(env:Environment=process.env):{model:string;baseURL:string;apiKey:string}|null {
+  if(configuredProvider(env)!=='nebius') return null;
+  if(!env.NEBIUS_API_KEY?.trim()||!env.EMBEDDING_MODEL?.trim()) return null;
+  const baseURL=(env.NEBIUS_BASE_URL?.trim()||NEBIUS_BASE_URL).replace(/\/$/,'');
+  if(baseURL!==NEBIUS_BASE_URL) throw Error('NEBIUS_BASE_URL_NOT_ALLOWED');
+  const model=env.EMBEDDING_MODEL.trim();
+  if(!/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i.test(model)) throw Error('EMBED_MODEL_INVALID');
+  return {model,baseURL,apiKey:env.NEBIUS_API_KEY.trim()};
 }

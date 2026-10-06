@@ -1,6 +1,7 @@
 import {generateKryaText} from '@/lib/ai/generate';
 import {prepareModel} from '@/lib/ai/provider';
-import {configurationErrorMessage} from '@/lib/ai/models';
+import {configurationErrorMessage,resolveEmbeddingConfig} from '@/lib/ai/models';
+import {createEmbedding,EMBEDDING_MODEL_LABEL} from '@/lib/ai/embed';
 import {MEMORY_SYSTEM,MEMORY_ASK,MEMORY_ANALYZE} from '@/lib/memory-prompts';
 import {createHash} from 'node:crypto';
 import {userDatabase} from '@/lib/server-auth';
@@ -8,6 +9,20 @@ import {parseModelJSON,validateAnswer,validateInsights,type MemorySource} from '
 export const maxDuration=60;
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const hash=(text:string)=>createHash('md5').update(text).digest('hex');
+
+type PendingEmbedding={id:string;content:string;source_revision:number;source_hash:string};
+
+// Best-effort backfill. Indexing succeeds even if embedding provider is unavailable.
+async function embedPendingChunks(db:Awaited<ReturnType<typeof userDatabase>>,projectId:string){
+ if(!db)return;
+ let config;try{config=resolveEmbeddingConfig()}catch{return}
+ if(!config)return;
+ const {data}=await db.rpc('memory_pending_embeddings',{p_project_id:projectId,p_model:EMBEDDING_MODEL_LABEL,p_limit:40});
+ for(const chunk of (data??[]) as PendingEmbedding[]){
+  try{const embedding=await createEmbedding(chunk.content,config.model,config.apiKey);await db.from('story_embeddings').upsert({project_id:projectId,chunk_id:chunk.id,source_revision:chunk.source_revision,source_hash:chunk.source_hash,model:EMBEDDING_MODEL_LABEL,embedding},{onConflict:'chunk_id,model'});}catch{return}
+ }
+}
+
 export async function GET(req:Request){
  const db=await userDatabase(req);if(!db)return Response.json({error:'Login diperlukan.'},{status:401});
  const url=new URL(req.url),projectId=url.searchParams.get('projectId')??'',sourceId=url.searchParams.get('sourceId');
@@ -22,13 +37,21 @@ export async function POST(req:Request){
  if(!body||typeof body!=='object'||Array.isArray(body))return Response.json({error:'Permintaan tidak valid.'},{status:400});
  const {projectId,action,question,chunkId}=body;if(typeof projectId!=='string'||!uuid.test(projectId)||!['index','ask','analyze'].includes(action))return Response.json({error:'Permintaan tidak valid.'},{status:400});
  const {data:p}=await db.from('projects').select('id').eq('id',projectId).maybeSingle();if(!p)return Response.json({error:'Proyek tidak ditemukan.'},{status:404});
- if(action==='index'){const {data,error}=await db.rpc('process_memory',{p_project_id:projectId,p_force:true});return Response.json(error?{error:'Indeks gagal diperbarui.'}:data,{status:error?503:200})}
+ if(action==='index'){const {data,error}=await db.rpc('process_memory',{p_project_id:projectId,p_force:true});
+  if(error)return Response.json({error:'Indeks gagal diperbarui.'},{status:503});
+  // Fire-and-forget semantic backfill; response and lexical index stay unaffected by embedding failures.
+  void embedPendingChunks(db,projectId).catch(()=>{});
+  return Response.json(data);
+ }
  let sources:MemorySource[]=[];
  if(action==='ask'){
   if(typeof question!=='string'||question.trim().length<3||question.length>1500)return Response.json({error:'Pertanyaan harus 3–1.500 karakter.'},{status:400});
   let expanded=question;const {data:characters,error:ce}=await db.from('characters').select('name,aliases').eq('project_id',projectId).eq('include_in_ai_context',true).is('deleted_at',null).limit(100);if(ce)return Response.json({error:'Konteks karakter gagal dimuat.'},{status:503});
   for(const c of characters??[])if([c.name,...c.aliases].some((a:string)=>a.length>1&&question.toLowerCase().includes(a.toLowerCase())))expanded+=' '+c.name+' '+c.aliases.join(' ');
-  const {data,error}=await db.rpc('retrieve_memory',{p_project_id:projectId,p_query:expanded.slice(0,2000)});if(error)return Response.json({error:'Pencarian Memory gagal.'},{status:503});
+  let queryEmbedding:number[]|null=null;
+  let embedConfig;try{embedConfig=resolveEmbeddingConfig()}catch{}
+  if(embedConfig){try{queryEmbedding=await createEmbedding(expanded.slice(0,2000),embedConfig.model,embedConfig.apiKey)}catch{/* Fall back to lexical if embedding endpoint fails */}}
+  const {data,error}=await db.rpc('retrieve_memory',{p_project_id:projectId,p_query:expanded.slice(0,2000),p_embedding:queryEmbedding});if(error)return Response.json({error:'Pencarian Memory gagal.'},{status:503});
   sources=(data??[]).filter((s:MemorySource,i:number,a:MemorySource[])=>!a.slice(0,i).some(t=>t.chapter_id===s.chapter_id&&Math.abs(t.chunk_index-s.chunk_index)<=1)).slice(0,6);
   if(!sources.length)return Response.json({answer:'Belum ditemukan bukti pada indeks terbaru. Perbarui Memory atau coba sebutkan nama karakter/kata kunci yang lebih spesifik.',citations:[],abstained:true});
  }else{
