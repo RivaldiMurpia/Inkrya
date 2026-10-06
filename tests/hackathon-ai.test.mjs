@@ -6,6 +6,7 @@ import {taskForAction} from '../lib/ai/router.ts';
 import {createNebiusModel,verifyNebiusModel,aiConfigurationStatus} from '../lib/ai/provider.ts';
 import {generateKryaText} from '../lib/ai/generate.ts';
 import {startTrace,safeTraceMetadata} from '../lib/langsmith/tracing.ts';
+import {createEmbedding,EMBEDDING_DIMENSIONS} from '../lib/ai/embed.ts';
 import {authReturnUrl} from '../lib/auth-redirect.ts';
 
 test('OAuth returns to the exact owned Preview origin and rejects lookalike hosts',()=>{
@@ -115,4 +116,19 @@ test('LangSmith outage stops after one attempt without exposing remote error bod
   let calls=0;
   const finish=await startTrace(context,config,10,{LANGSMITH_TRACING:'true',LANGSMITH_API_KEY:'test'},async()=>{calls++;return new Response('PRIVATE DEBUG BODY',{status:500})});
   assert.equal(await finish({success:true,latencyMs:2}),'failed');assert.equal(calls,1);
+});
+test('Embedding call sends documented body only and validates dimension',async()=>{
+  let body;const request=async(url,init)=>{
+    assert.equal(url,NEBIUS_BASE_URL+'/embeddings');assert.equal(init.redirect,'error');
+    body=JSON.parse(init.body);assert.equal(body.encoding_format,'float');assert.equal(body.model,'Qwen/Qwen3-Embedding-8B');
+    assert.ok(!('dimensions' in body));
+    return Response.json({data:[{embedding:Array.from({length:EMBEDDING_DIMENSIONS},()=>0.5)}]});
+  };
+  const vector=await createEmbedding('synthetic chunk text','Qwen/Qwen3-Embedding-8B','embed-test-key',request);
+  assert.equal(vector.length,EMBEDDING_DIMENSIONS);
+  const short=Array.from({length:EMBEDDING_DIMENSIONS-1},()=>0.5);
+  await assert.rejects(()=>createEmbedding('x','Qwen/Qwen3-Embedding-8B','k',async()=>Response.json({data:[{embedding:short}]})),/RESPONSE_INVALID/);
+  await assert.rejects(()=>createEmbedding('x','Qwen/Qwen3-Embedding-8B','k',async()=>new Response('secret body',{status:503})),/REQUEST_FAILED/);
+  await assert.rejects(()=>createEmbedding('   ','Qwen/Qwen3-Embedding-8B','k',request),/INPUT_INVALID/);
+  await assert.rejects(()=>createEmbedding('a'.repeat(16001),'Qwen/Qwen3-Embedding-8B','k',request),/INPUT_INVALID/);
 });
