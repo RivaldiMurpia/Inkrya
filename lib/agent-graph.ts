@@ -9,19 +9,19 @@ import {generateKryaText} from './ai/generate.ts';
 import type {prepareModel} from './ai/provider.ts';
 import {prepareAskContext} from './ask.ts';
 import type {StoryContext,StoryDatabase} from './story-context.ts';
-import {PLANNER_SYSTEM,WRITER_SYSTEM,GUARDIAN_SYSTEM,REPAIR_SYSTEM,CRITIC_SYSTEM} from './agent-prompts.ts';
+import {PLANNER_SYSTEM,WRITER_SYSTEM,GUARDIAN_SYSTEM,REPAIR_SYSTEM,CRITIC_SYSTEM,CANON_SYSTEM} from './agent-prompts.ts';
 import {
- validatePlan,validateGuardianIssues,validateCritic,parseModelJSON,
- type ChapterPlan,type GuardianIssue,type CriticReport,
+ validatePlan,validateGuardianIssues,validateCritic,validateCanonProposals,parseModelJSON,
+ type ChapterPlan,type GuardianIssue,type CriticReport,type CanonProposal,
 } from './agent-validation.ts';
 
-export type Role='planner'|'writer'|'continuity'|'critic';
-export type AgentStage='context'|'plan'|'draft'|'guardian'|'recheck'|'repair'|'critic';
+export type Role='planner'|'writer'|'continuity'|'critic'|'canon';
+export type AgentStage='context'|'plan'|'draft'|'guardian'|'recheck'|'repair'|'critic'|'canon';
 export type AgentStep={stage:AgentStage;detail:string;atIndex?:number;issueCount?:number};
 export type TokenTotals={inputTokens:number;outputTokens:number};
 export type WriteResult={
  draft:string;plan:ChapterPlan;issues:GuardianIssue[];findings:GuardianIssue[];resolved:boolean;repairAttempts:number;
- critic:CriticReport|null;steps:AgentStep[];tokenUsage:TokenTotals;hasEmbedding:boolean;warning:string|null;
+ critic:CriticReport|null;proposals:CanonProposal[];steps:AgentStep[];tokenUsage:TokenTotals;hasEmbedding:boolean;warning:string|null;
 };
 
 type PreparedModel=Awaited<ReturnType<typeof prepareModel>>;
@@ -32,10 +32,10 @@ export type WriteCallFn=(role:Role,system:string,prompt:string,maxOutputTokens:n
 const MAX_REPAIRS=2;
 const GUARDIAN_CONTENT_CAP=1200; // guardian needs claim+id, not full prose (input budget)
 // Worst case: planner 25s (×2 with one JSON retry) + writer 45s + 3×guardian 25s (×2)
-// + 2×repair 45s + critic 25s (×2) = 50+45+150+90+50 = 385s worst-worst... bounded by
-// typical latency (~10-25s/call). Keep budgets tight: maxDuration is 300s.
-const TIMEOUT={planner:25000,writer:45000,continuity:25000,critic:25000} as const;
-const TOKENS={planner:1400,writer:1800,continuity:1200,critic:900} as const;
+// + 2×repair 45s + critic 25s (×2) + canon 25s (×2) = 50+45+150+90+50+50 = 435s worst-worst...
+// bounded by typical latency (~10-25s/call). Keep budgets tight: maxDuration is 300s.
+const TIMEOUT={planner:25000,writer:45000,continuity:25000,critic:25000,canon:25000} as const;
+const TOKENS={planner:1400,writer:1800,continuity:1200,critic:900,canon:2400} as const;
 
 type Emit=(step:AgentStep)=>void;
 
@@ -67,10 +67,11 @@ const WriteState=Annotation.Root({
  repairAttempts:Annotation<number>({reducer:(_,b)=>b,default:()=>0}),
  // Channel is `report`, not `critic`: node names and channel names must not collide.
  report:Annotation<CriticReport|null>({reducer:(_,b)=>b,default:()=>null}),
+ proposals:Annotation<CanonProposal[]>({reducer:(_,b)=>b,default:()=>[]}),
 });
 
 // Build per request so node closures capture this request's emit/call/limits.
-function buildWriteGraph(call:WriteCallFn,emit:Emit){
+function buildWriteGraph(call:WriteCallFn,emit:Emit,signal?:AbortSignal){
  const nodeCall=async(role:Role,system:string,prompt:string)=>{
   return await call(role,system,prompt,TOKENS[role]);
  };
@@ -130,6 +131,25 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
    emit({stage:'critic',detail:'Kritik selesai'});
    return {report:critic};
   })
+  .addNode('canon',async(state:typeof WriteState.State)=>{
+   // Best-effort: the draft is already final, so an extraction failure must never fail the
+   // write. Honest stage either way (demo §8: Canon Diff is the last step; §12: diff may
+   // be empty).
+   try{
+    const prompt=JSON.stringify({draft:state.draft,plan:state.plan,canon:state.context!.canon,timeline:state.context!.timeline,knowledge:state.context!.knowledge,characters:state.context!.characters,evidence:guardianPayload(state.context!)});
+    const proposals=await jsonCall('canon',CANON_SYSTEM,prompt,text=>validateCanonProposals(parseModelJSON(text),state.draft,state.context!));
+    emit({stage:'canon',detail:proposals.length?`Usulan kanon disiapkan · ${proposals.length}`:'Tidak ada usulan kanon baru'});
+    return {proposals};
+   }catch(e){
+    // An aborted request must follow the same error path as every other stage, otherwise a
+    // cancelled write would report status='complete' with a partial run. jsonCall discards
+    // the first error, so the abort may surface as a non-Error throw or via the signal.
+    const message=e instanceof Error?e.message:String(e);
+    if(message==='REQUEST_ABORTED'||signal?.aborted)throw Error('REQUEST_ABORTED');
+    emit({stage:'canon',detail:'Usulan kanon tidak tersedia'});
+    return {proposals:[]};
+   }
+  })
   .addEdge(START,'planner')
   .addEdge('planner','writer')
   .addEdge('writer','guardian')
@@ -138,7 +158,8 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
    return 'repair';
   })
   .addEdge('repair','guardian')
-  .addEdge('critic',END)
+  .addEdge('critic','canon')
+  .addEdge('canon',END)
   .compile();
 }
 
@@ -179,15 +200,15 @@ export async function runWriteGraph(input:{
  if(!context.evidence.length)throw Error('NO_EVIDENCE');
  emit({stage:'context',detail:`Konteks cerita siap · ${context.evidence.length} bagian relevan · ${context.timeline.length} peristiwa · ${context.knowledge.length} pengetahuan karakter`});
 
- const graph=buildWriteGraph(call,emit);
+ const graph=buildWriteGraph(call,emit,signal);
  const final=await graph.invoke(
-  {instruction,context,plan:null,draft:'',issues:[],findings:[],repairAttempts:0,report:null},
+  {instruction,context,plan:null,draft:'',issues:[],findings:[],repairAttempts:0,report:null,proposals:[]},
   {signal,recursionLimit:16},
  );
  return {
   draft:final.draft,plan:final.plan!,issues:final.issues,findings:final.findings,
   resolved:final.issues.length===0,repairAttempts:final.repairAttempts,
-  critic:final.report,steps,tokenUsage:totals,hasEmbedding:context.hasEmbedding,
+  critic:final.report,proposals:final.proposals,steps,tokenUsage:totals,hasEmbedding:context.hasEmbedding,
   warning:preparedContext.semanticWarning,
  };
 }

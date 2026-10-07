@@ -65,16 +65,18 @@ test('Only executed stages appear, unresolved issues surface honestly',async()=>
 test('Apply converts the draft to a tiptap doc, saves via save_chapter and notifies studio',async()=>{
  const originalFetch=globalThis.fetch;
  const chapters=[{id:'ch-1',project_id:'synthetic-project',title:'Bab 1',content_json:{},plain_text:'',revision_number:1,position:0}];
- const calls={insert:null,rpc:null,created:null};
+ const calls={insert:null,rpc:[],created:null};
  setDatabase({
   auth:{getSession:async()=>({data:{session:{access_token:'synthetic-session'}}})},
   from(table){
+   // The idempotent-apply probe reads canon_proposals for an already-bound chapter.
+   if(table==='canon_proposals')return {select(){return this},eq(){return this},not(){return this},limit:async()=>({data:[],error:null})};
    return {
     select(){return this},eq(){return this},
     insert(payload){calls.insert={table,payload};return {select:()=>({single:async()=>({data:{id:'ch-new',project_id:'synthetic-project',title:'Bab 2',content_json:payload.content_json,plain_text:payload.plain_text,revision_number:1,position:1},error:null})})}},
    };
   },
-  rpc(name,args){calls.rpc={name,args};return Promise.resolve({data:null,error:null})},
+  rpc(name,args){calls.rpc.push({name,args});return Promise.resolve({data:null,error:null})},
  });
  globalThis.fetch=async()=>ndjson([
   {type:'stage',stage:'context',detail:'Konteks cerita siap'},
@@ -82,7 +84,7 @@ test('Apply converts the draft to a tiptap doc, saves via save_chapter and notif
   {type:'stage',stage:'draft',detail:'Draf dibuat'},
   {type:'stage',stage:'guardian',detail:'Kontinuitas bersih',issueCount:0},
   {type:'stage',stage:'critic',detail:'Kritik selesai'},
-  {type:'result',draft:'Paragraf pertama.\n\nParagraf kedua.',plan:{goal:'g',scenePlan:[],suggestedStoryTime:null},issues:[],resolved:true,repairAttempts:0,critic:{strengths:[],improvements:[]},steps:[],warning:null},
+  {type:'result',draft:'Paragraf pertama.\n\nParagraf kedua.',plan:{goal:'g',scenePlan:[],suggestedStoryTime:null},issues:[],resolved:true,repairAttempts:0,critic:{strengths:[],improvements:[]},generationId:'gen-1',steps:[],warning:null},
  ]);
  const container=document.createElement('div');document.body.append(container);const root=createRoot(container);
  try{
@@ -96,9 +98,68 @@ test('Apply converts the draft to a tiptap doc, saves via save_chapter and notif
   assert.equal(calls.insert.payload.title,'Bab 2');
   assert.equal(calls.insert.payload.position,1);
   assert.deepEqual(calls.insert.payload.content_json,{type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Paragraf pertama.'}]},{type:'paragraph',content:[{type:'text',text:'Paragraf kedua.'}]}]});
-  assert.equal(calls.rpc.name,'save_chapter');
-  assert.equal(calls.rpc.args.p_chapter_id,'ch-new');
-  assert.equal(calls.rpc.args.p_base_revision,1);
+  const save=calls.rpc.find(c=>c.name==='save_chapter');
+  assert.equal(save.args.p_chapter_id,'ch-new');
+  assert.equal(save.args.p_base_revision,1);
+  // Canon derives from the accepted manuscript: attach runs after save, same generation.
+  const attach=calls.rpc.find(c=>c.name==='attach_canon_proposals');
+  assert.equal(attach.args.p_generation_id,'gen-1');
+  assert.equal(attach.args.p_chapter_id,'ch-new');
   assert.equal(calls.created.id,'ch-new');
+ }finally{await act(async()=>root.unmount());container.remove();globalThis.fetch=originalFetch}
+});
+
+test('Canon diff: proposals render, decisions gated until the draft is applied',async()=>{
+ const originalFetch=globalThis.fetch;
+ const chapters=[{id:'ch-1',project_id:'synthetic-project',title:'Bab 1',content_json:{},plain_text:'',revision_number:1,position:0}];
+ const rpc=[];
+ const pending={id:'prop-1',generation_id:'gen-1',target_kind:'fact',payload:{claim:'Mira memiliki liontin perak dari ibunya',subject:'Mira',predicate:'memiliki',object:'liontin perak'},quote:'Ia masih menyimpan liontin perak pemberian ibunya.',status:'proposed',revision:0,target_id:null,chapter_id:null,title:null,current:false};
+ let attached=false;
+ setDatabase({
+  auth:{getSession:async()=>({data:{session:{access_token:'synthetic-session'}}})},
+  from(table){
+   if(table==='canon_proposals')return {select(){return this},eq(){return this},not(){return this},limit:async()=>({data:[],error:null})};
+   return {
+    select(){return this},eq(){return this},
+    insert(payload){return {select:()=>({single:async()=>({data:{id:'ch-new',project_id:'synthetic-project',title:'Bab 2',content_json:payload.content_json,plain_text:payload.plain_text,revision_number:1,position:1},error:null})})}},
+   };
+  },
+  rpc(name,args){
+   rpc.push({name,args});
+   if(name==='memory_overview')return Promise.resolve({data:{proposals:[attached?{...pending,chapter_id:'ch-new',current:true}:pending]},error:null});
+   if(name==='attach_canon_proposals'){attached=true;return Promise.resolve({data:1,error:null})}
+   return Promise.resolve({data:null,error:null});
+  },
+ });
+ globalThis.fetch=async()=>ndjson([
+  {type:'stage',stage:'context',detail:'Konteks cerita siap'},
+  {type:'stage',stage:'plan',detail:'Rencana bab dibuat'},
+  {type:'stage',stage:'draft',detail:'Draf dibuat'},
+  {type:'stage',stage:'guardian',detail:'Kontinuitas bersih',issueCount:0},
+  {type:'stage',stage:'critic',detail:'Kritik selesai'},
+  {type:'stage',stage:'canon',detail:'Usulan kanon disiapkan · 1'},
+  {type:'result',draft:'Ia masih menyimpan liontin perak pemberian ibunya.',plan:{goal:'g',scenePlan:[],suggestedStoryTime:null},issues:[],resolved:true,repairAttempts:0,critic:{strengths:[],improvements:[]},generationId:'gen-1',steps:[],warning:null},
+ ]);
+ const container=document.createElement('div');document.body.append(container);const root=createRoot(container);
+ try{
+  await act(async()=>root.render(React.createElement(WritePanel,{projectId:'synthetic-project',chapters,onChapterCreated:()=>{}})));
+  await act(async()=>type(container,'Tulis bab.'));
+  await act(async()=>button(container,'Tulis bab dengan Krya').click());
+  assert.match(container.textContent,/Usulan kanon diperiksa/);
+  assert.match(container.textContent,/Usulan kanon \(1\)/);
+  assert.match(container.textContent,/Fakta · Menunggu keputusan/);
+  assert.match(container.textContent,/Mira memiliki liontin perak dari ibunya/);
+  // Before apply the proposal is unattached → approval is not offered as a live action.
+  assert.ok(button(container,'Setujui').disabled);
+  assert.match(container.textContent,/Draf belum dipakai sebagai bab/);
+  await act(async()=>button(container,'Pakai sebagai bab baru').click());
+  // After apply the same proposal is attached and current → decidable.
+  assert.equal(button(container,'Setujui').disabled,false);
+  // ...and the apply action is spent, so the chapter cannot be inserted twice.
+  assert.ok(button(container,'Sudah dipakai').disabled);
+  await act(async()=>button(container,'Setujui').click());
+  const decide=rpc.find(c=>c.name==='decide_canon_proposals');
+  assert.deepEqual(decide.args.p_decisions,[{id:'prop-1',revision:0,decision:'accepted'}]);
+  assert.equal(decide.args.p_edits,null);
  }finally{await act(async()=>root.unmount());container.remove();globalThis.fetch=originalFetch}
 });

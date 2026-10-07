@@ -31,9 +31,12 @@ function makeDb(evidence){
   },
  };
 }
-const prepared={planner:{},writer:{},continuity:{},critic:{}};
+const prepared={planner:{},writer:{},continuity:{},critic:{},canon:{}};
 const planJson=JSON.stringify({goal:'Konfrontasi Vale.',characters:['Mira'],requiredEvents:['Konfrontasi'],activePlotThreads:['Helios'],constraints:['Vale sudah meninggal'],scenePlan:['Pembuka','Konfrontasi'],continuityRisks:['Status hidup Vale'],suggestedStoryTime:null});
 const draft='Mira menatap Vale. Arka mengangkat pistol.';
+const pendantDraft='Mira menatap Vale. Ia masih menyimpan liontin perak pemberian ibunya.';
+const canonJson=JSON.stringify({proposals:[{target_kind:'fact',claim:'Mira memiliki liontin perak dari ibunya',quote:'Ia masih menyimpan liontin perak pemberian ibunya.',evidence_ids:['chunk-1'],subject:'Mira',predicate:'memiliki',object:'liontin perak',confidence:0.8}]});
+const emptyCanon=JSON.stringify({proposals:[]});
 
 function fakeCall(answers){
  const calls=[];
@@ -49,14 +52,14 @@ test('happy path: one issue found, one repair, clean recheck, critic runs',async
  const stages=[];
  const leak=JSON.stringify({issues:[{type:'knowledge_leak',severity:'high',claim:'Mira menyebut Helios',evidence_ids:['know-1'],explanation:'Belum saatnya',repair_hint:'Hapus'}]});
  const clean=JSON.stringify({issues:[]});
- const {calls,call}=fakeCall([planJson,draft,leak,draft+' Diperbaiki.',clean,JSON.stringify({strengths:['Rapat'],improvements:['Perjelas']})]);
+ const {calls,call}=fakeCall([planJson,draft,leak,draft+' Diperbaiki.',clean,JSON.stringify({strengths:['Rapat'],improvements:['Perjelas']}),emptyCanon]);
  const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan adegan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
- assert.deepEqual(stages,['context','plan','draft','guardian','repair','recheck','critic']);
- assert.equal(calls.length,6);
+ assert.deepEqual(stages,['context','plan','draft','guardian','repair','recheck','critic','canon']);
+ assert.equal(calls.length,7);
  assert.equal(result.repairAttempts,1);
  assert.equal(result.resolved,true);
  assert.ok(result.draft.endsWith('Diperbaiki.'));
- assert.deepEqual(result.tokenUsage,{inputTokens:60,outputTokens:30});
+ assert.deepEqual(result.tokenUsage,{inputTokens:70,outputTokens:35});
  assert.deepEqual(result.issues,[]);
  // The leak found on the first pass stays inspectable even after repair fixed it.
  assert.equal(result.findings.length,1);
@@ -65,9 +68,9 @@ test('happy path: one issue found, one repair, clean recheck, critic runs',async
 test('guardian budget: two repairs exhausted keeps issues and stays honest',async()=>{
  const stages=[];
  const leak=JSON.stringify({issues:[{type:'alive_dead_conflict',severity:'critical',claim:'Vale hidup setelah kematiannya',evidence_ids:['fact-1'],explanation:'Karakter mati',repair_hint:'Revisi adegan'}]});
- const {calls,call}=fakeCall([planJson,draft,leak,draft,leak,draft,leak,JSON.stringify({strengths:[],improvements:['Selesaikan konflik']})]);
+ const {calls,call}=fakeCall([planJson,draft,leak,draft,leak,draft,leak,JSON.stringify({strengths:[],improvements:['Selesaikan konflik']}),emptyCanon]);
  const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan adegan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
- assert.deepEqual(stages,['context','plan','draft','guardian','repair','recheck','repair','recheck','critic']);
+ assert.deepEqual(stages,['context','plan','draft','guardian','repair','recheck','repair','recheck','critic','canon']);
  assert.equal(calls.filter(c=>c.role==='continuity').length,3);
  assert.equal(calls.filter(c=>c.role==='writer').length,3);
  assert.equal(result.repairAttempts,2);
@@ -78,19 +81,19 @@ test('guardian budget: two repairs exhausted keeps issues and stays honest',asyn
 });
 test('clean guardian skips repair entirely',async()=>{
  const stages=[];
- const {calls,call}=fakeCall([planJson,draft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]})]);
+ const {calls,call}=fakeCall([planJson,draft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]}),emptyCanon]);
  const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan adegan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
- assert.deepEqual(stages,['context','plan','draft','guardian','critic']);
- assert.equal(calls.length,4);
+ assert.deepEqual(stages,['context','plan','draft','guardian','critic','canon']);
+ assert.equal(calls.length,5);
  assert.equal(result.resolved,true);
 });
 test('fabricated guardian evidence ids drop issues, so no repair loop runs',async()=>{
  const stages=[];
  const fake=JSON.stringify({issues:[{type:'knowledge_leak',severity:'high',claim:'Halusinasi',evidence_ids:['fact_123'],explanation:'-',repair_hint:'-'}]});
- const {calls,call}=fakeCall([planJson,draft,fake,JSON.stringify({strengths:[],improvements:[]})]);
+ const {calls,call}=fakeCall([planJson,draft,fake,JSON.stringify({strengths:[],improvements:[]}),emptyCanon]);
  const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
  assert.equal(result.resolved,true);
- assert.deepEqual(stages,['context','plan','draft','guardian','critic']);
+ assert.deepEqual(stages,['context','plan','draft','guardian','critic','canon']);
 });
 test('model failure propagates without a partial result',async()=>{
  const err=new Error('AI_GENERATION_FAILED');
@@ -103,8 +106,37 @@ test('no evidence aborts before any agent call',async()=>{
  assert.equal(calls.length,0);
 });
 test('guardian prompt carries evidence ids and story_time for restraint rules',async()=>{
- const {calls,call}=fakeCall([planJson,draft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]})]);
+ const {calls,call}=fakeCall([planJson,draft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]}),emptyCanon]);
  await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan.',userId:'u1',generationId:'g1',prepared,call});
  const guardian=calls.find(c=>c.role==='continuity');
  assert.ok(guardian.prompt.includes('know-1')&&guardian.prompt.includes('2048-03-11')&&guardian.prompt.includes('learned_at_story_time'));
+});
+test('canon node: pendant proposals survive validation and ride the result',async()=>{
+ const stages=[];
+ const {calls,call}=fakeCall([planJson,pendantDraft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]}),canonJson]);
+ const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan adegan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
+ assert.deepEqual(stages,['context','plan','draft','guardian','critic','canon']);
+ assert.equal(calls.filter(c=>c.role==='canon').length,1);
+ assert.equal(result.proposals.length,1);
+ assert.equal(result.proposals[0].claim,'Mira memiliki liontin perak dari ibunya');
+ const canonCall=calls.find(c=>c.role==='canon');
+ assert.ok(canonCall.prompt.includes('liontin perak pemberian ibunya'));
+});
+test('canon node: fabricated quote drops the item, honest empty stage',async()=>{
+ const stages=[];
+ const fake=JSON.stringify({proposals:[{target_kind:'fact',claim:'Fakta palsu',quote:'kalimat yang tidak ada di draf',evidence_ids:['chunk-1']}]});
+ const {calls,call}=fakeCall([planJson,pendantDraft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]}),fake]);
+ const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
+ assert.deepEqual(result.proposals,[]);
+ assert.equal(stages.at(-1),'canon');
+ assert.ok(stages.slice(-1).length===1);
+});
+test('canon node failure never fails the write — draft intact, honest stage',async()=>{
+ const stages=[];
+ const err=new Error('AI_GENERATION_FAILED');
+ const {calls,call}=fakeCall([planJson,pendantDraft,JSON.stringify({issues:[]}),JSON.stringify({strengths:[],improvements:[]}),err]);
+ const result=await runWriteGraph({db:makeDb([evidenceRow]),projectId:'p1',instruction:'Lanjutkan adegan.',userId:'u1',generationId:'g1',prepared,call,emit:s=>stages.push(s.stage)});
+ assert.equal(result.draft,pendantDraft);
+ assert.deepEqual(result.proposals,[]);
+ assert.deepEqual(stages,['context','plan','draft','guardian','critic','canon']);
 });

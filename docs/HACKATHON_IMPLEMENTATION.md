@@ -2,10 +2,10 @@
 
 Updated: 2026-10-07. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist.
 
-## Current increment: Phases 2–4 delivered; Phase 1 prose gate still open
+## Current increment: Phases 2–5 delivered; Phase 1 prose gate still open
 
 Phase 1 Indonesian prose acceptance remains **INCOMPLETE** (Super and the Ultra/Lightning
-Writer pilots failed the four-case corpus). Phases **2, 3 and 4 are delivered and verified
+Writer pilots failed the four-case corpus). Phases **2, 3, 4 and 5 are delivered and verified
 on Preview** — see [PHASE2_3_4_DELIVERY.md](PHASE2_3_4_DELIVERY.md) for the schema,
 retrieval, Ask Your Story and Agentic Writing details, the fixed PL/pgSQL ambiguity bug, the
 live verification matrix, and the honest limits. The rest of this contract's Phase 1 history
@@ -68,7 +68,7 @@ Writers still review/copy suggestions; no agent writes manuscript/canon automati
 | 2 Memory | **Delivered** — pgvector story_embeddings (Qwen3-Embedding-8B), hybrid RRF retrieval, SPO story_facts; see `PHASE2_3_4_DELIVERY.md` | ivfflat/hnsw index when corpus grows |
 | 3 Ask Your Story | **Delivered** — story_time, timeline_events, character_knowledge, story context builder, two-hop grounded Q&A, four abstention classes, review RPCs; see `PHASE2_3_4_DELIVERY.md` | CONTRADICTION status unproven live (unit-tested only); benchmarked quality still open |
 | 4 Agentic Writing | **Delivered** — LangGraph JS planner → writer → guardian → bounded repair (≤2) → critic, NDJSON honest activity UI, 1 slot/write; see `PHASE2_3_4_DELIVERY.md` | planner instruction-following imperfect on corpus-distant scenes; prose quality unchanged from Phase 1 gate |
-| 5 Canon Update | Human fact review and chapter snapshots | Separate proposed canon diff; explicit approval; atomic revision-safe acceptance, idempotency and re-indexing |
+| 5 Canon Update | **Delivered** — `canon` node after critic proposes fact/event/knowledge from the final draft; `canon_proposals` table; explicit Setujui/Edit/Tolak; atomic revision-safe batch acceptance (`decide_canon_proposals`), per-generation dedup, live retrieval re-indexing verified; see `PHASE5_DELIVERY.md` | cross-generation dedup and `CONFLICTED`/retraction workflows deferred; live Preview E2E pending |
 | 6 Story Doctor | No implementation | Cross-manuscript checks with evidence; report checked coverage; no invented health scores |
 | 7 Tavily | No implementation | Intentional opt-in research, bounded queries, citations, isolation from fictional canon, trace tool calls |
 | 8 Evaluation | Synthetic unit/DB alpha tests | LangSmith datasets, baseline comparison, retrieval/continuity/knowledge metrics; Toloka optional |
