@@ -41,8 +41,12 @@ export function validatePlan(value:unknown,context:Pick<StoryContext,'characters
  for(const key of Object.keys(x))if(!(PLAN_KEYS as readonly string[]).includes(key))throw Error('INVALID_PLAN');
  if(typeof x.goal!=='string'||!x.goal.trim()||x.goal.length>600)throw Error('INVALID_PLAN');
  const names=new Set(context.characters.flatMap(c=>[c.name,...c.aliases]).map(n=>n.toLocaleLowerCase()));
- const cast=stringList(x.characters,'PLAN',8,300).filter(name=>names.has(name.toLocaleLowerCase()));
- if(!cast.length)throw Error('INVALID_PLAN');
+ const proposed=stringList(x.characters,'PLAN',8,300);
+ // Cast grounding is best-effort: filter to configured characters when the project has any.
+ // A project without a character list (or one whose cast is not yet configured) must not
+ // block planning — the Guardian, not the plan validator, is the semantic check.
+ const cast=names.size?proposed.filter(name=>names.has(name.toLocaleLowerCase())):proposed;
+ if(names.size&&!cast.length)throw Error('INVALID_PLAN');
  const suggested=typeof x.suggestedStoryTime==='string'&&x.suggestedStoryTime.trim()&&x.suggestedStoryTime.length<=100?x.suggestedStoryTime.trim():null;
  return {
   goal:x.goal.trim(),

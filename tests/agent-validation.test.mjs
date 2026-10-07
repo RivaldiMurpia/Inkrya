@@ -24,6 +24,10 @@ test('validatePlan resolves alias and drops unknown characters',()=>{
  assert.deepEqual(alias.characters,['Si Mira']);
  assert.throws(()=>validatePlan({...plan,characters:['Zed']},context),/INVALID_PLAN/);
 });
+test('validatePlan keeps proposed cast when the project has no configured characters',()=>{
+ const out=validatePlan({...plan,characters:['Mira','Vale']},{characters:[]});
+ assert.deepEqual(out.characters,['Mira','Vale']);
+});
 test('validatePlan fails closed on an extra key, bad goal or missing key',()=>{
  assert.throws(()=>validatePlan({...plan,score:8},context),/INVALID_PLAN/);
  assert.throws(()=>validatePlan({...plan,goal:''},context),/INVALID_PLAN/);
