@@ -5,7 +5,17 @@ export function parseModelJSON(text:string){
  // Models occasionally emit raw control characters inside string literals (a newline in
  // the middle of a quote). Strip them before parsing; JSON.parse otherwise fails hard.
  const cleaned=text.trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'').replace(/[\u0000-\u001F]/g,' ');
- return JSON.parse(cleaned);
+ // Some models append commentary after the JSON object; keep only the first balanced value.
+ const trimmed=cleaned.slice(cleaned.search(/[[{]/));
+ let depth=0,inString=false,escaped=false,end=-1;
+ for(let i=0;i<trimmed.length;i++){
+  const ch=trimmed[i];
+  if(inString){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')inString=false;continue}
+  if(ch==='"')inString=true;
+  else if(ch==='{'||ch==='[')depth++;
+  else if(ch==='}'||ch===']'){depth--;if(!depth){end=i+1;break}}
+ }
+ return JSON.parse(end>0?trimmed.slice(0,end):trimmed);
 }
 const STATUS_VALUES:AnswerStatus[]=['ANSWERED','NOT_ESTABLISHED','NO_EVIDENCE','CONTRADICTION'];
 

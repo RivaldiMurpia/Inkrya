@@ -69,3 +69,7 @@ test('parseModelJSON still strips json fences for agent outputs',()=>{
 test('parseModelJSON tolerates raw control characters inside string literals',()=>{
  assert.deepEqual(parseModelJSON('{"claim":"baris satu\nbaris dua"}'),{claim:'baris satu baris dua'});
 });
+test('parseModelJSON ignores trailing commentary after the JSON value',()=>{
+ assert.deepEqual(parseModelJSON('{"issues":[]} Berikut penjelasannya.'),{issues:[]});
+ assert.deepEqual(parseModelJSON('Baik, ini hasilnya: {"issues":[]}'),{issues:[]});
+});
