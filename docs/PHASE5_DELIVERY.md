@@ -1,7 +1,8 @@
 # Phase 5 — Canon Update delivery notes
 
-Status: **delivered, pending live E2E on Preview** (unit + typecheck + build + live SQL
-invariants passed; see verification matrix). Companion to `PHASE2_3_4_DELIVERY.md`.
+Status: **delivered — unit + typecheck + build + live SQL invariants + headless live E2E on
+Preview all passed** (synthetic user/project, revoked after). Companion to
+`PHASE2_3_4_DELIVERY.md`.
 
 Contract (`HACKATHON_IMPLEMENTATION.md` Phase 5 row): "Separate proposed canon diff;
 explicit approval; atomic revision-safe acceptance, idempotency and re-indexing."
@@ -103,6 +104,12 @@ per proposal: Setujui / Edit / Tolak through `decide_canon_proposals`.
 | atomic batch: good item rolled back when later item raises | PASS (live SQL) |
 | chapter edited after attach → QUOTE_NOT_IN_CHAPTER | PASS (live SQL) |
 | direct table writes denied: authenticated holds SELECT only (save/attach/decide are security definer with their own owner checks) | PASS (live grants) |
+| Live E2E on Preview (synthetic user, headless): signature prompt → NDJSON stages context→plan→draft→guardian(1 issue)→repair→recheck(teratasi)→critic→**canon (2 proposals)**; proposals persisted unattached | PASS |
+| apply chain: chapters insert + save_chapter + process_memory + attach → 2 proposals bound to Bab 3 | PASS (live, REST as the user) |
+| accept via decide RPC as user → 1 CANON fact + target_id; reject → no canon row; re-accept → no-op (`decided:0`) | PASS (live) |
+| accepted fact retrievable via `retrieve_memory` (Bab 3 chunks ranked) + memory_overview shows backlog states | PASS (live) |
+| Hybrid retrieval regression found & fixed during E2E: `OPERATOR(public.<=>)` broke after the vector extension moved to `extensions` (42883 on the 3-arg retrieve_memory, so every semantic-context request failed with CONTEXT_READ_FAILED). Re-created with `OPERATOR(extensions.<=>)`; repo file updated | PASS (hybrid call returns rows) |
+| E2E artifacts revoked (synthetic user, project, proposals, chapter deleted) | PASS |
 | Advisors | no new security findings; 2 covering indexes added for new FKs |
 
 ## Bugs caught during verification
@@ -152,6 +159,11 @@ Five-lens adversarial review of the diff (plus live SQL probing) found and fixed
     `status='CANON'`; the older fact review UI labelled them "Menunggu review" and offered
     a button that would rewrite them to `'approved'`. Fixed: CANON facts show as
     "Kanon (dari usulan)" and their review actions are disabled.
+14. **Hybrid retrieval broke after the security relocation** (found by the live E2E, not by
+    Phase 5 code) — the 2026-10-07 vector-extension move to `extensions` left
+    `retrieve_memory(uuid,text,vector)` referencing `OPERATOR(public.<=>)`, so every
+    semantic-context request failed 42883 → `CONTEXT_READ_FAILED` on Ask and Write.
+    Fixed: operator re-qualified to `extensions.<=>` (repo + live).
 
 ## Honest limits
 

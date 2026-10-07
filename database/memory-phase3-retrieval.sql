@@ -42,7 +42,9 @@ begin
   limit 20
  ),
  semantic as (
-  select e.chunk_id as id,row_number() over(order by e.embedding OPERATOR(public.<=>) p_embedding) as rn
+  -- The vector extension lives in the `extensions` schema (relocated 2026-10-07); the
+  -- operator must be schema-qualified the same way or the function raises 42883 at runtime.
+  select e.chunk_id as id,row_number() over(order by e.embedding OPERATOR(extensions.<=>) p_embedding) as rn
   from public.story_embeddings e
   join public.story_chunks s on s.id=e.chunk_id and s.project_id=e.project_id
   join public.chapters c on c.id=s.chapter_id and c.project_id=s.project_id
