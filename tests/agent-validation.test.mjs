@@ -73,3 +73,7 @@ test('parseModelJSON ignores trailing commentary after the JSON value',()=>{
  assert.deepEqual(parseModelJSON('{"issues":[]} Berikut penjelasannya.'),{issues:[]});
  assert.deepEqual(parseModelJSON('Baik, ini hasilnya: {"issues":[]}'),{issues:[]});
 });
+test('parseModelJSON recovers a trailing comma before a closing brace',()=>{
+ assert.deepEqual(parseModelJSON('{"a":1,"b":[1,2,],}'),{a:1,b:[1,2]});
+ assert.deepEqual(parseModelJSON('{"x":"a,}",}'),{x:'a,}'});
+});

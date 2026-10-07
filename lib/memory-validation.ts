@@ -15,7 +15,21 @@ export function parseModelJSON(text:string){
   else if(ch==='{'||ch==='[')depth++;
   else if(ch==='}'||ch===']'){depth--;if(!depth){end=i+1;break}}
  }
- return JSON.parse(end>0?trimmed.slice(0,end):trimmed);
+ const value=end>0?trimmed.slice(0,end):trimmed;
+ try{return JSON.parse(value)}
+ catch{
+  // Common model defect: a trailing comma before a closing brace/bracket. Remove them
+  // outside string literals and retry once; a still-invalid body throws as before.
+  let out='',inStr=false,esc=false;
+  for(let i=0;i<value.length;i++){
+   const ch=value[i];
+   if(inStr){out+=ch;if(esc)esc=false;else if(ch==='\\')esc=true;else if(ch==='"')inStr=false;continue}
+   if(ch==='"'){inStr=true;out+=ch;continue}
+   if(ch===','){let j=i+1;while(j<value.length&&/\s/.test(value[j]))j++;if(value[j]==='}'||value[j]===']')continue}
+   out+=ch;
+  }
+  return JSON.parse(out);
+ }
 }
 const STATUS_VALUES:AnswerStatus[]=['ANSWERED','NOT_ESTABLISHED','NO_EVIDENCE','CONTRADICTION'];
 
