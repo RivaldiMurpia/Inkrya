@@ -25,8 +25,7 @@ export type GuardianIssue={
 export type CriticReport={strengths:string[];improvements:string[]};
 export {parseModelJSON};
 
-const PLAN_KEYS=['goal','characters','requiredEvents','activePlotThreads','constraints','scenePlan','continuityRisks'] as const;
-const PLAN_KEY_SET=new Set<string>([...PLAN_KEYS,'suggestedStoryTime']);
+const PLAN_KEYS=['goal','characters','requiredEvents','activePlotThreads','constraints','scenePlan','continuityRisks','suggestedStoryTime'] as const;
 const ISSUE_TYPES=['canon_contradiction','timeline_contradiction','knowledge_leak','location_impossible','alive_dead_conflict','relationship_inconsistency','world_rule_violation','behavior_inconsistency'] as const;
 const SEVERITIES=['critical','high','medium','low'] as const;
 const stringList=(value:unknown,label:string,maxItems:number,maxLength:number):string[]=>{
@@ -35,12 +34,12 @@ const stringList=(value:unknown,label:string,maxItems:number,maxLength:number):s
 };
 
  // Exact key set — an extra key (e.g. invented scores) fails closed (INVALID_PLAN).
- // suggestedStoryTime is optional (models omit it when no evidence supports a date).
+ // suggestedStoryTime is required but may be null when no evidence supports a date.
 export function validatePlan(value:unknown,context:Pick<StoryContext,'characters'>):ChapterPlan{
  const x=value as Record<string,unknown>|null;
  if(!x||typeof x!=='object')throw Error('INVALID_PLAN');
  for(const key of PLAN_KEYS)if(!(key in x))throw Error('INVALID_PLAN');
- for(const key of Object.keys(x))if(!PLAN_KEY_SET.has(key))throw Error('INVALID_PLAN');
+ for(const key of Object.keys(x))if(!(PLAN_KEYS as readonly string[]).includes(key))throw Error('INVALID_PLAN');
  if(typeof x.goal!=='string'||!x.goal.trim()||x.goal.length>600)throw Error('INVALID_PLAN');
  const names=new Set(context.characters.flatMap(c=>[c.name,...c.aliases]).map(n=>n.toLocaleLowerCase()));
  const proposed=stringList(x.characters,'PLAN',8,300);

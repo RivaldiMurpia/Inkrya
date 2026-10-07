@@ -32,10 +32,10 @@ test('validatePlan fails closed on an extra key or bad goal',()=>{
  assert.throws(()=>validatePlan({...plan,score:8},context),/INVALID_PLAN/);
  assert.throws(()=>validatePlan({...plan,goal:''},context),/INVALID_PLAN/);
 });
-test('validatePlan accepts an omitted or null suggestedStoryTime',()=>{
- const {suggestedStoryTime:_omit,...without}=plan;
- assert.equal(validatePlan(without,context).suggestedStoryTime,null);
+test('validatePlan accepts a null suggestedStoryTime but requires the key',()=>{
  assert.equal(validatePlan({...plan,suggestedStoryTime:null},context).suggestedStoryTime,null);
+ const {suggestedStoryTime:_omit,...without}=plan;
+ assert.throws(()=>validatePlan(without,context),/INVALID_PLAN/);
 });
 test('validatePlan slices oversized arrays and drops overlong items',()=>{
  const big={...plan,scenePlan:Array.from({length:12},(_,i)=>`Adegan ${i}`)};

@@ -90,7 +90,9 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
   })
   .addNode('guardian',async(state:typeof WriteState.State)=>{
    const fresh=state.repairAttempts===0;
-   const prompt=JSON.stringify({instruction:state.instruction,draft:state.draft,plan:state.plan,evidence:guardianPayload(state.context!)});
+   // scene_story_time is the explicit anchor: the guardian judges "alive/dead" and timeline
+   // against the scene's own time, so a pre-death scene is never flagged (demo §10).
+   const prompt=JSON.stringify({instruction:state.instruction,scene_story_time:state.plan?.suggestedStoryTime??null,draft:state.draft,plan:state.plan,evidence:guardianPayload(state.context!)});
    const {text}=await nodeCall('continuity',GUARDIAN_SYSTEM,prompt);
    const issues=validateGuardianIssues(parseModelJSON(text),state.context!);
    if(fresh)emit({stage:'guardian',detail:issues.length?`Masalah kontinuitas ditemukan · ${issues.length}`:'Kontinuitas bersih',issueCount:issues.length});
