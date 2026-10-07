@@ -28,11 +28,14 @@ test('validatePlan keeps proposed cast when the project has no configured charac
  const out=validatePlan({...plan,characters:['Mira','Vale']},{characters:[]});
  assert.deepEqual(out.characters,['Mira','Vale']);
 });
-test('validatePlan fails closed on an extra key, bad goal or missing key',()=>{
+test('validatePlan fails closed on an extra key or bad goal',()=>{
  assert.throws(()=>validatePlan({...plan,score:8},context),/INVALID_PLAN/);
  assert.throws(()=>validatePlan({...plan,goal:''},context),/INVALID_PLAN/);
- const {suggestedStoryTime:_drop,...without}=plan;
- assert.throws(()=>validatePlan(without,context),/INVALID_PLAN/);
+});
+test('validatePlan accepts an omitted or null suggestedStoryTime',()=>{
+ const {suggestedStoryTime:_omit,...without}=plan;
+ assert.equal(validatePlan(without,context).suggestedStoryTime,null);
+ assert.equal(validatePlan({...plan,suggestedStoryTime:null},context).suggestedStoryTime,null);
 });
 test('validatePlan slices oversized arrays and drops overlong items',()=>{
  const big={...plan,scenePlan:Array.from({length:12},(_,i)=>`Adegan ${i}`)};
