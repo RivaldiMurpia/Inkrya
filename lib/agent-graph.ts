@@ -76,7 +76,8 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
  return new StateGraph(WriteState)
   .addNode('planner',async(state:{instruction:string;context:StoryContext|null})=>{
    const ctx=state.context!;
-   const prompt=JSON.stringify({instruction:state.instruction,state:writerPayload(ctx),cast:ctx.characters.map(c=>({name:c.name,role:c.role}))});
+   // `instruction` first and twice: it is the binding order; `state` is background only.
+   const prompt=JSON.stringify({instruction:state.instruction,priority:'instruksi_penulis_mengikat',instruction_penulis:state.instruction,state:writerPayload(ctx),cast:ctx.characters.map(c=>({name:c.name,role:c.role}))});
    const {text}=await nodeCall('planner',PLANNER_SYSTEM,prompt);
    const plan=validatePlan(parseModelJSON(text),ctx);
    emit({stage:'plan',detail:`Rencana bab dibuat · ${plan.scenePlan.length} adegan`});
