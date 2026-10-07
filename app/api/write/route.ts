@@ -63,8 +63,9 @@ export async function POST(req:Request){
    }catch(e){
     const aborted=(e as Error).message==='REQUEST_ABORTED'||req.signal.aborted;
     // Codes only — never provider bodies or manuscript text (same rule as generateKryaText).
-    console.error('write-agent',aborted?'REQUEST_ABORTED':(e as Error).message);
-    send(aborted?{type:'error',error:'Penulisan dihentikan.'}:{type:'error',error:friendlyError((e as Error).message)});
+    const code=aborted?'REQUEST_ABORTED':(e as Error).message;
+    console.error('write-agent',code);
+    send(aborted?{type:'error',code,error:'Penulisan dihentikan.'}:{type:'error',code,error:friendlyError(code)});
     await db.from('ai_generations').update({status:'error'}).eq('id',run.id);
    }finally{
     req.signal.removeEventListener('abort',abort);
