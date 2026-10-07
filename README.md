@@ -2,7 +2,7 @@
 
 Current product authority: [Hackathon PRD](docs/INKRYA_HACKATHON_PRD.md). The existing writing alpha is being upgraded incrementally; it is not the completed hackathon MVP.
 
-Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.md) and [Nebius/LangSmith setup](docs/HACKATHON_SETUP.md). New Phase 1 code adds Nebius-compatible model routing and privacy-preserving trace support. Activation awaits verified credentials/model IDs; existing Gateway remains the default. No LangGraph, semantic retrieval, Guardian, Tavily or Story Doctor is claimed yet.
+Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.md), [Phases 2–4 delivery notes](docs/PHASE2_3_4_DELIVERY.md), and [Nebius/LangSmith setup](docs/HACKATHON_SETUP.md). Phases 2 (pgvector hybrid retrieval), 3 (Ask Your Story) and 4 (Agentic Writing — LangGraph planner/writer/guardian/bounded repair/critic) are delivered and verified on Preview; Phase 1 Indonesian prose quality remains the open gate. No Tavily research or Story Doctor is claimed yet.
 
 ## Implemented source
 
