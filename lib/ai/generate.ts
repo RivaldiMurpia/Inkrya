@@ -2,7 +2,7 @@ import {generateText} from 'ai';
 import {startTrace,type TraceContext} from '../langsmith/tracing.ts';
 import type {prepareModel} from './provider.ts';
 
-export async function generateKryaText(prepared:Awaited<ReturnType<typeof prepareModel>>,input:{system:string;prompt:string;maxOutputTokens:number;timeoutMs?:number},context:TraceContext) {
+export async function generateKryaText(prepared:Awaited<ReturnType<typeof prepareModel>>,input:{system:string;prompt:string;maxOutputTokens:number;timeoutMs?:number;signal?:AbortSignal},context:TraceContext) {
   if(typeof window!=='undefined') throw Error('SERVER_ONLY');
   if(!context.generationId) throw Error('PERSISTED_GENERATION_REQUIRED');
   if(input.prompt.length+input.system.length>48000||input.maxOutputTokens>2400||input.maxOutputTokens<1) throw Error('GENERATION_BUDGET_EXCEEDED');
@@ -17,7 +17,9 @@ export async function generateKryaText(prepared:Awaited<ReturnType<typeof prepar
       : ['nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B','nvidia/nemotron-3-super-120b-a12b'].includes(prepared.config.id)
         ? {providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}},...(prepared.config.id==='nvidia/nemotron-3-super-120b-a12b'?{temperature:1,topP:0.95}:{})}
         : {};
-    const result=await generateText({model:prepared.model,system:input.system,prompt:input.prompt,maxOutputTokens:input.maxOutputTokens,maxRetries:0,abortSignal:AbortSignal.timeout(Math.min(input.timeoutMs??35000,45000)),...options});
+    // External signal (request abort) combines with the internal per-call timeout.
+    const abortSignal=input.signal?AbortSignal.any([input.signal,AbortSignal.timeout(Math.min(input.timeoutMs??35000,45000))]):AbortSignal.timeout(Math.min(input.timeoutMs??35000,45000));
+    const result=await generateText({model:prepared.model,system:input.system,prompt:input.prompt,maxOutputTokens:input.maxOutputTokens,maxRetries:0,abortSignal,...options});
     // Only final text is used; reasoning channels are not displayed, persisted or traced.
     if(!result.text.trim()||/<\/?think(?:ing)?>/i.test(result.text)) throw Error('INVALID_PROSE_OUTPUT');
     const latencyMs=Date.now()-started;
