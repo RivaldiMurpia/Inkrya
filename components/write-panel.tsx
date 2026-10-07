@@ -7,7 +7,7 @@ type AgentStage='context'|'plan'|'draft'|'guardian'|'recheck'|'repair'|'critic';
 type AgentStep={stage:AgentStage;detail:string;atIndex?:number;issueCount?:number};
 type GuardianIssue={type:string;severity:string;claim:string;evidence_ids:string[];explanation:string;repair_hint:string};
 type WriteResult={
- draft:string;plan:{goal:string;scenePlan:string[];suggestedStoryTime:string|null};issues:GuardianIssue[];
+ draft:string;plan:{goal:string;scenePlan:string[];suggestedStoryTime:string|null};issues:GuardianIssue[];findings?:GuardianIssue[];
  resolved:boolean;repairAttempts:number;critic:{strengths:string[];improvements:string[]}|null;
  steps:AgentStep[];warning:string|null;
 };
@@ -93,8 +93,8 @@ export default function WritePanel({projectId,chapters,onChapterCreated}:{projec
    {unresolved&&<div className="notice">Masalah kontinuitas belum teratasi. Tinjau draf sebelum dipakai.</div>}
    <p className="krya-prose">{result.draft}</p>
    {result.plan?.suggestedStoryTime&&<p className="muted">Saran waktu cerita dari rencana: {result.plan.suggestedStoryTime} · waktu bab diatur lewat Memory.</p>}
-   {result.issues.length>0&&<section aria-label="Masalah kontinuitas"><h3>Masalah kontinuitas</h3>
-    {result.issues.map((issue,i)=><article className="memory-card" key={i}><span className="eyebrow">{ISSUE_LABELS[issue.type]??issue.type} · {SEVERITY_LABELS[issue.severity]??issue.severity}</span><h4>{issue.claim}</h4><p>{issue.explanation}</p><p className="muted">Saran perbaikan: {issue.repair_hint}</p><p className="muted">Bukti: {issue.evidence_ids.join(', ')}</p></article>)}
+   {(result.findings?.length??0)>0&&<section aria-label="Temuan pemeriksaan kontinuitas"><h3>Temuan pemeriksaan kontinuitas</h3><p className="muted">{result.resolved?'Semua temuan di bawah sudah diperbaiki pada draf akhir.':'Temuan yang belum teratasi tetap ada pada draf.'}</p>
+    {(result.findings??result.issues).map((issue,i)=><article className="memory-card" key={i}><span className="eyebrow">{ISSUE_LABELS[issue.type]??issue.type} · {SEVERITY_LABELS[issue.severity]??issue.severity}</span><h4>{issue.claim}</h4><p>{issue.explanation}</p><p className="muted">Saran perbaikan: {issue.repair_hint}</p><p className="muted">Bukti: {issue.evidence_ids.join(', ')}</p></article>)}
    </section>}
    {result.critic&&(result.critic.strengths.length>0||result.critic.improvements.length>0)&&<section aria-label="Kritik Krya"><h3>Kritik Krya</h3>
     {result.critic.strengths.map((s,i)=><p key={`s${i}`}>✓ {s}</p>)}

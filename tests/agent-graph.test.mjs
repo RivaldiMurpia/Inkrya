@@ -58,6 +58,9 @@ test('happy path: one issue found, one repair, clean recheck, critic runs',async
  assert.ok(result.draft.endsWith('Diperbaiki.'));
  assert.deepEqual(result.tokenUsage,{inputTokens:60,outputTokens:30});
  assert.deepEqual(result.issues,[]);
+ // The leak found on the first pass stays inspectable even after repair fixed it.
+ assert.equal(result.findings.length,1);
+ assert.equal(result.findings[0].type,'knowledge_leak');
 });
 test('guardian budget: two repairs exhausted keeps issues and stays honest',async()=>{
  const stages=[];
@@ -70,6 +73,8 @@ test('guardian budget: two repairs exhausted keeps issues and stays honest',asyn
  assert.equal(result.repairAttempts,2);
  assert.equal(result.resolved,false);
  assert.equal(result.issues.length,1);
+ // Dedupe: the same claim seen across three guardian passes appears once in findings.
+ assert.equal(result.findings.length,1);
 });
 test('clean guardian skips repair entirely',async()=>{
  const stages=[];

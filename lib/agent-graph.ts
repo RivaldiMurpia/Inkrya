@@ -20,7 +20,7 @@ export type AgentStage='context'|'plan'|'draft'|'guardian'|'recheck'|'repair'|'c
 export type AgentStep={stage:AgentStage;detail:string;atIndex?:number;issueCount?:number};
 export type TokenTotals={inputTokens:number;outputTokens:number};
 export type WriteResult={
- draft:string;plan:ChapterPlan;issues:GuardianIssue[];resolved:boolean;repairAttempts:number;
+ draft:string;plan:ChapterPlan;issues:GuardianIssue[];findings:GuardianIssue[];resolved:boolean;repairAttempts:number;
  critic:CriticReport|null;steps:AgentStep[];tokenUsage:TokenTotals;hasEmbedding:boolean;warning:string|null;
 };
 
@@ -60,6 +60,9 @@ const WriteState=Annotation.Root({
  plan:Annotation<ChapterPlan|null>({reducer:(_,b)=>b,default:()=>null}),
  draft:Annotation<string>({reducer:(_,b)=>b,default:()=>''}),
  issues:Annotation<GuardianIssue[]>({reducer:(_,b)=>b,default:()=>[]}),
+ // Every issue ever detected, deduped — survives repair so the UI can show what the
+ // Guardian found even after a fix (demo §19: knowledge leak must be inspectable).
+ findings:Annotation<GuardianIssue[]>({reducer:(a,b)=>[...a,...b.filter(next=>!a.some(seen=>seen.type===next.type&&seen.claim===next.claim))],default:()=>[]}),
  repairAttempts:Annotation<number>({reducer:(_,b)=>b,default:()=>0}),
  // Channel is `report`, not `critic`: node names and channel names must not collide.
  report:Annotation<CriticReport|null>({reducer:(_,b)=>b,default:()=>null}),
@@ -92,7 +95,7 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
    const issues=validateGuardianIssues(parseModelJSON(text),state.context!);
    if(fresh)emit({stage:'guardian',detail:issues.length?`Masalah kontinuitas ditemukan · ${issues.length}`:'Kontinuitas bersih',issueCount:issues.length});
    else emit({stage:'recheck',detail:issues.length?`Masalah tersisa · ${issues.length}`:'Masalah teratasi',issueCount:issues.length});
-   return {issues};
+   return {issues,findings:issues};
   })
   .addNode('repair',async(state:typeof WriteState.State)=>{
    const pass=state.repairAttempts+1;
@@ -159,11 +162,11 @@ export async function runWriteGraph(input:{
 
  const graph=buildWriteGraph(call,emit);
  const final=await graph.invoke(
-  {instruction,context,plan:null,draft:'',issues:[],repairAttempts:0,report:null},
+  {instruction,context,plan:null,draft:'',issues:[],findings:[],repairAttempts:0,report:null},
   {signal,recursionLimit:16},
  );
  return {
-  draft:final.draft,plan:final.plan!,issues:final.issues,
+  draft:final.draft,plan:final.plan!,issues:final.issues,findings:final.findings,
   resolved:final.issues.length===0,repairAttempts:final.repairAttempts,
   critic:final.report,steps,tokenUsage:totals,hasEmbedding:context.hasEmbedding,
   warning:preparedContext.semanticWarning,

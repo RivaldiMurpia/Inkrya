@@ -57,7 +57,7 @@ export async function POST(req:Request){
     });
     send({type:'result',...result});
     await db.from('ai_generations').update({
-     result:JSON.stringify({draft:result.draft,plan:result.plan,issues:result.issues,resolved:result.resolved,repairAttempts:result.repairAttempts,critic:result.critic,steps:result.steps}),
+     result:JSON.stringify({draft:result.draft,plan:result.plan,issues:result.issues,findings:result.findings,resolved:result.resolved,repairAttempts:result.repairAttempts,critic:result.critic,steps:result.steps}),
      status:'complete',token_usage:{...result.tokenUsage,provider:prepared.writer.config.provider},
     }).eq('id',run.id);
    }catch(e){

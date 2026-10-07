@@ -29,6 +29,7 @@ test('Only executed stages appear, unresolved issues surface honestly',async()=>
  const originalFetch=globalThis.fetch;
  const result={draft:'Draf yang diperbaiki.',plan:{goal:'Konfrontasi.',scenePlan:['Pembuka'],suggestedStoryTime:null},
   issues:[{type:'alive_dead_conflict',severity:'critical',claim:'Vale hidup',evidence_ids:['fact-1'],explanation:'Karakter mati',repair_hint:'Revisi'}],
+  findings:[{type:'alive_dead_conflict',severity:'critical',claim:'Vale hidup',evidence_ids:['fact-1'],explanation:'Karakter mati',repair_hint:'Revisi'},{type:'knowledge_leak',severity:'high',claim:'Mira menyebut Helios',evidence_ids:['know-1'],explanation:'Belum saatnya',repair_hint:'Hapus'}],
   resolved:false,repairAttempts:2,critic:{strengths:['Rapat'],improvements:['Selesaikan konflik']},steps:[],warning:null};
  setDatabase({auth:{getSession:async()=>({data:{session:{access_token:'synthetic-session'}}})},from:()=>({select(){return this},eq(){return this},insert(){return this},update(){return this}}),rpc:()=>Promise.resolve({data:null,error:null})});
  globalThis.fetch=async()=>ndjson([
@@ -53,7 +54,9 @@ test('Only executed stages appear, unresolved issues surface honestly',async()=>
   assert.match(container.textContent,/Kritik selesai/);
   assert.ok(!container.textContent.includes('Kontinuitas bersih'));
   assert.match(container.textContent,/Masalah kontinuitas belum teratasi/);
+  assert.match(container.textContent,/Temuan pemeriksaan kontinuitas/);
   assert.match(container.textContent,/Konflik status hidup\/mati/);
+  assert.match(container.textContent,/Kebocoran pengetahuan karakter/);
   assert.match(container.textContent,/fact-1/);
   assert.match(container.textContent,/Draf yang diperbaiki./);
  }finally{await act(async()=>root.unmount());container.remove();globalThis.fetch=originalFetch}
