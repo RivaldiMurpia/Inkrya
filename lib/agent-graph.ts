@@ -76,15 +76,27 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
  return new StateGraph(WriteState)
   .addNode('planner',async(state:{instruction:string;context:StoryContext|null})=>{
    const ctx=state.context!;
-   // `instruction` first and twice: it is the binding order; `state` is background only.
-   const prompt=JSON.stringify({instruction:state.instruction,priority:'instruksi_penulis_mengikat',instruction_penulis:state.instruction,state:writerPayload(ctx),cast:ctx.characters.map(c=>({name:c.name,role:c.role}))});
+   // The requested scene is stated first and unambiguously; retrieved story state is
+   // background. Without this split the model anchors on the evidence and plans the
+   // wrong (already-written) scene.
+   const prompt=JSON.stringify({
+    adegan_yang_diminta_penulis:state.instruction,
+    latar_belakang_cerita:{cast:ctx.characters.map(c=>({name:c.name,role:c.role})),timeline:ctx.timeline,knowledge:ctx.knowledge,canon:ctx.canon},
+    gaya_dan_bukti:{evidence:ctx.evidence.map(({id,title,story_time,content})=>({id,title,story_time,content}))},
+    pengingat:'scenePlan WAJIB menggambarkan adegan_yang_diminta_penulis, bukan adegan lain dari latar_belakang_cerita.',
+   });
    const {text}=await nodeCall('planner',PLANNER_SYSTEM,prompt);
    const plan=validatePlan(parseModelJSON(text),ctx);
    emit({stage:'plan',detail:`Rencana bab dibuat · ${plan.scenePlan.length} adegan`});
    return {plan};
   })
   .addNode('writer',async(state:typeof WriteState.State)=>{
-   const prompt=JSON.stringify({instruction:state.instruction,plan:state.plan,context:writerPayload(state.context!)});
+   const prompt=JSON.stringify({
+    adegan_yang_diminta_penulis:state.instruction,
+    rencana_bab:state.plan,
+    latar_belakang_cerita:writerPayload(state.context!),
+    pengingat:'Tulis adegan_yang_diminta_penulis pada waktu dan situasi yang disebutnya; latar_belakang_cerita hanya untuk konsistensi.',
+   });
    const {text}=await nodeCall('writer',WRITER_SYSTEM,prompt);
    emit({stage:'draft',detail:'Draf dibuat'});
    return {draft:text.trim()};
