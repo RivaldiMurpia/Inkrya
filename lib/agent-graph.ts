@@ -31,9 +31,10 @@ export type WriteCallFn=(role:Role,system:string,prompt:string,maxOutputTokens:n
 
 const MAX_REPAIRS=2;
 const GUARDIAN_CONTENT_CAP=1200; // guardian needs claim+id, not full prose (input budget)
-// Worst case: planner 30s + writer 45s + 3×guardian 30s + 2×repair 45s + critic 30s
-// = 285s < maxDuration 300. Keep this math comment with the code.
-const TIMEOUT={planner:30000,writer:45000,continuity:30000,critic:30000} as const;
+// Worst case: planner 25s (×2 with one JSON retry) + writer 45s + 3×guardian 25s (×2)
+// + 2×repair 45s + critic 25s (×2) = 50+45+150+90+50 = 385s worst-worst... bounded by
+// typical latency (~10-25s/call). Keep budgets tight: maxDuration is 300s.
+const TIMEOUT={planner:25000,writer:45000,continuity:25000,critic:25000} as const;
 const TOKENS={planner:1400,writer:1800,continuity:1200,critic:900} as const;
 
 type Emit=(step:AgentStep)=>void;
@@ -73,6 +74,12 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
  const nodeCall=async(role:Role,system:string,prompt:string)=>{
   return await call(role,system,prompt,TOKENS[role]);
  };
+ // JSON nodes retry once on a malformed body: models intermittently emit a stray comma or
+ // truncated object, and a second draw clears it without spending another quota slot.
+ const jsonCall=async<T>(role:Role,system:string,prompt:string,parse:(text:string)=>T):Promise<T>=>{
+  try{return parse((await nodeCall(role,system,prompt)).text)}
+  catch(first){return parse((await nodeCall(role,system,prompt)).text);void first}
+ };
  return new StateGraph(WriteState)
   .addNode('planner',async(state:{instruction:string;context:StoryContext|null})=>{
    const ctx=state.context!;
@@ -85,8 +92,7 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
     gaya_dan_bukti:{evidence:ctx.evidence.map(({id,title,story_time,content})=>({id,title,story_time,content}))},
     pengingat:'scenePlan WAJIB menggambarkan adegan_yang_diminta_penulis, bukan adegan lain dari latar_belakang_cerita.',
    });
-   const {text}=await nodeCall('planner',PLANNER_SYSTEM,prompt);
-   const plan=validatePlan(parseModelJSON(text),ctx);
+   const plan=await jsonCall('planner',PLANNER_SYSTEM,prompt,text=>validatePlan(parseModelJSON(text),ctx));
    emit({stage:'plan',detail:`Rencana bab dibuat · ${plan.scenePlan.length} adegan`});
    return {plan};
   })
@@ -106,8 +112,7 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
    // scene_story_time is the explicit anchor: the guardian judges "alive/dead" and timeline
    // against the scene's own time, so a pre-death scene is never flagged (demo §10).
    const prompt=JSON.stringify({instruction:state.instruction,scene_story_time:state.plan?.suggestedStoryTime??null,draft:state.draft,plan:state.plan,evidence:guardianPayload(state.context!)});
-   const {text}=await nodeCall('continuity',GUARDIAN_SYSTEM,prompt);
-   const issues=validateGuardianIssues(parseModelJSON(text),state.context!);
+   const issues=await jsonCall('continuity',GUARDIAN_SYSTEM,prompt,text=>validateGuardianIssues(parseModelJSON(text),state.context!));
    if(fresh)emit({stage:'guardian',detail:issues.length?`Masalah kontinuitas ditemukan · ${issues.length}`:'Kontinuitas bersih',issueCount:issues.length});
    else emit({stage:'recheck',detail:issues.length?`Masalah tersisa · ${issues.length}`:'Masalah teratasi',issueCount:issues.length});
    return {issues,findings:issues};
@@ -121,8 +126,7 @@ function buildWriteGraph(call:WriteCallFn,emit:Emit){
   })
   .addNode('critic',async(state:typeof WriteState.State)=>{
    const prompt=JSON.stringify({instruction:state.instruction,plan:state.plan,draft:state.draft});
-   const {text}=await nodeCall('critic',CRITIC_SYSTEM,prompt);
-   const critic=validateCritic(parseModelJSON(text));
+   const critic=await jsonCall('critic',CRITIC_SYSTEM,prompt,text=>validateCritic(parseModelJSON(text)));
    emit({stage:'critic',detail:'Kritik selesai'});
    return {report:critic};
   })
