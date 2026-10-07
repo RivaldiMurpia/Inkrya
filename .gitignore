@@ -4,3 +4,13 @@ node_modules/
 !.env.example
 .vercel/
 *.tsbuildinfo
+
+# Local tooling config — may contain API keys, never commit
+.mcp.json
+.claude/settings.local.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
