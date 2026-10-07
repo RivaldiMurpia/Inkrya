@@ -66,3 +66,6 @@ test('validateCritic accepts a report and fails closed on any score key',()=>{
 test('parseModelJSON still strips json fences for agent outputs',()=>{
  assert.deepEqual(parseModelJSON('```json\n{"issues":[]}\n```'),{issues:[]});
 });
+test('parseModelJSON tolerates raw control characters inside string literals',()=>{
+ assert.deepEqual(parseModelJSON('{"claim":"baris satu\nbaris dua"}'),{claim:'baris satu baris dua'});
+});

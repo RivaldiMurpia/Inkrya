@@ -1,7 +1,12 @@
 export type MemorySource={id:string;chapter_id:string;title:string;story_time?:string|null;source_revision:number;chunk_index:number;content:string};
 export type AnswerStatus='ANSWERED'|'NOT_ESTABLISHED'|'NO_EVIDENCE'|'CONTRADICTION';
 export type ValidatedClaim={text:string;quote:string;source:MemorySource};
-export function parseModelJSON(text:string){return JSON.parse(text.trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,''))}
+export function parseModelJSON(text:string){
+ // Models occasionally emit raw control characters inside string literals (a newline in
+ // the middle of a quote). Strip them before parsing; JSON.parse otherwise fails hard.
+ const cleaned=text.trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'').replace(/[\u0000-\u001F]/g,' ');
+ return JSON.parse(cleaned);
+}
 const STATUS_VALUES:AnswerStatus[]=['ANSWERED','NOT_ESTABLISHED','NO_EVIDENCE','CONTRADICTION'];
 
 // Contract: ANSWERED requires ≥1 supported claim; any other status returns [] claims.
