@@ -34,6 +34,20 @@ export function researchConfig(env:Environment=process.env):ResearchConfig{
 
 export type CreditDecision={allowed:boolean;reason:'ok'|'USER_LIMIT'|'GLOBAL_LIMIT';userUsed:number;userRemaining:number;globalRemaining:number;runCost:number};
 
+// PostgREST serialises a set-returning function as an ARRAY even for a single row, and
+// bigint arrives as a string. Reading the payload as a plain object would silently yield 0
+// and disable the meter — this normaliser is the only way the route may read the RPC result.
+export function creditUsageRow(payload:unknown):{userUsed:number;globalUsed:number}{
+ const row=Array.isArray(payload)?payload[0]:payload;
+ const r=row as Record<string,unknown>|null|undefined;
+ if(!r||typeof r!=='object')return {userUsed:0,globalUsed:0};
+ const num=(value:unknown):number=>{
+  const parsed=typeof value==='number'?value:typeof value==='string'&&/^\d+$/.test(value)?Number(value):NaN;
+  return Number.isFinite(parsed)&&parsed>=0?parsed:0;
+ };
+ return {userUsed:num(r.user_credits_24h),globalUsed:num(r.global_credits_month)};
+}
+
 // Worst-case reservation: a user with fewer credits left than one run's maximum is
 // refused, so a refusal can never leave a run half-paid. The check runs before the quota
 // insert and is not atomic: two simultaneous runs can both pass it, and the overshoot is

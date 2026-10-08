@@ -60,3 +60,16 @@ test('the reservation is worst-case: 2 credits left refuses a run that may cost 
  assert.equal(edge.allowed,true);
  assert.equal(edge.userRemaining,3);
 });
+
+test('the RPC payload is normalised whether PostgREST returns an array or a single object',async()=>{
+ // PostgREST serialises a set-returning function as an array even for one row; reading the
+ // row as a plain object silently yields 0 and disables the meter entirely.
+ const {creditUsageRow}=await import('../lib/research-budget.ts');
+ assert.deepEqual(creditUsageRow([{user_credits_24h:28,global_credits_month:31}]),{userUsed:28,globalUsed:31});
+ assert.deepEqual(creditUsageRow({user_credits_24h:3,global_credits_month:3}),{userUsed:3,globalUsed:3});
+ assert.deepEqual(creditUsageRow([]),{userUsed:0,globalUsed:0});
+ assert.deepEqual(creditUsageRow(null),{userUsed:0,globalUsed:0});
+ assert.deepEqual(creditUsageRow('banyak'),{userUsed:0,globalUsed:0});
+ // A string numeric from PostgREST (bigint is serialised as a string) still counts.
+ assert.deepEqual(creditUsageRow([{user_credits_24h:'28',global_credits_month:'31'}]),{userUsed:28,globalUsed:31});
+});

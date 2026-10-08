@@ -2,7 +2,7 @@ import {userDatabase} from '@/lib/server-auth';
 import {prepareModel} from '@/lib/ai/provider';
 import {configurationErrorMessage} from '@/lib/ai/models';
 import {runResearch} from '@/lib/research';
-import {researchConfig,researchCreditBudget} from '@/lib/research-budget';
+import {researchConfig,researchCreditBudget,creditUsageRow} from '@/lib/research-budget';
 export const maxDuration=60;
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 
@@ -28,9 +28,12 @@ export async function POST(req:Request){
  let prepared;try{prepared=await prepareModel('memory')}catch(e){return Response.json({error:configurationErrorMessage(e)},{status:503})}
  // Credit check before the LLM quota slot: refusing here burns nothing. Not atomic — two
  // simultaneous runs can both pass, bounded by MAX_RUN_CREDITS (3) of overshoot.
+ // creditUsageRow normalises PostgREST's array-shaped set-returning result; reading the
+ // payload as a plain object would silently read 0 and disable the meter.
  const {data:usage,error:usageError}=await db.rpc('research_credit_usage',{p_project_id:projectId});
  if(usageError)return Response.json({error:'Meter kredit riset gagal dibaca.'},{status:503});
- const decision=researchCreditBudget({userUsed:Number(usage?.user_credits_24h??0),globalUsed:Number(usage?.global_credits_month??0),config});
+ const {userUsed,globalUsed}=creditUsageRow(usage);
+ const decision=researchCreditBudget({userUsed,globalUsed,config});
  if(!decision.allowed)return Response.json({error:decision.reason==='USER_LIMIT'
   ?`Kuota riset web kamu tersisa ${decision.userRemaining} kredit dari ${decision.runCost} yang dibutuhkan satu riset. Coba lagi besok.`
   :`Kuota riset web global sedang penuh (sisa ${decision.globalRemaining} kredit). Coba lagi nanti.`},{status:429});
