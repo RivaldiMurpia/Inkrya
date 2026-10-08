@@ -77,18 +77,36 @@ checked coverage; no invented health scores."
 
 | Check | Result |
 |---|---|
-| Unit tests (106) | PASS |
+| Unit tests (107) | PASS |
 | Typecheck (non-incremental) | PASS |
 | Production build (`ƒ /api/memory` present) | PASS |
-| Migration `doctor_action_phase6` applied; CHECK verified live (write/doctor accepted, other values rejected) | PASS |
-| Live E2E Preview as owner: Story Doctor run on The Last Signal (10 chapters) | PASS |
-| Coverage numbers match measured DB state (10/10 ready, 8 with story_time, facts/events/knowledge counts) | PASS |
-| Findings render with resolvable evidence buttons; "Buka bab" opens the right chapter | PASS |
-| Report persisted in `ai_generations.result` (`action='doctor'`) and re-renders on panel open | PASS |
+| Migration `doctor_action_phase6` applied; CHECK verified live (`action in chat|rewrite|continue|brainstorm|write|doctor`) | PASS |
+| Live E2E Preview as synthetic owner (ownership transferred then reverted): The Last Signal run ×3 across the fix iterations | PASS |
+| Coverage numbers match measured DB state (10/10 ready, 9 summarized — one stale summary correctly excluded by the revision+hash gate, 12 of 13 events current — one stale chunk gated, 25 facts, 6 knowledge, 3 characters) | PASS |
+| First live run exposed a real gap: findings=0 because the package held no prose. Fixed: current-chunk AI summaries ride the package as `ringkasan_bab` and are citable evidence | PASS (fixed + re-run) |
+| Second live run on a seeded trap project (promise → disappearance → object contradiction): model emitted findings the validator kept 0 of; drop counters added to distinguish clean vs discarded; prompt pins character-for-character id fidelity | PASS (fixed + re-run) |
+| Trap project run: 2/2 AI findings kept, both evidence-resolvable — unresolved_thread (Arka's broken promise) and world_rule/continuity (notebook lost in Bab 3 reappears in Bab 4) | PASS |
+| The Last Signal final run: 1 finding kept (a placement concern around the Bab 7 flashback), evidence resolved; the legal flashback itself is NOT flagged as alive-dead/timeline error (story_time rule held) | PASS |
+| Report persisted in `ai_generations.result` (`action='doctor'`, status complete, trace `sent`); re-renders on panel open | PASS |
 | LangSmith run `story-doctor` metadata-only, task `memory` | PASS |
-| 1 run = 1 quota row; reopening the panel spends nothing | PASS |
-| False-positive guard: flashback-era Elias scenes not flagged (story_time rule in prompt; validator drops evidence-less findings) | PASS (corpus carries the trap) |
-| E2E artifacts fully reverted (ownership, quota rows) | PASS |
+| 1 run = 1 quota row (11 rows in the 24h window across doctor/analyze, all intentional E2E calls) | PASS |
+| E2E artifacts fully reverted: ownership restored to `2863d8de…`, QA project deleted, synthetic user + ai_generations rows deleted; demo corpus intact (25 approved + 13 CANON events + 6 CANON knowledge, 0 pending proposals) | PASS |
+| E2E scratch files (incl. the synthetic-session token) committed by accident were stripped from history via filter-branch; branch force-pushed; scratch patterns gitignored | PASS |
+| Advisors | no new findings |
+
+## Bugs caught during verification
+
+1. **Knowledge coverage read 0** — `current_character_knowledge` returns nothing when
+   `p_character_ids` is null; the package builder now selects character ids and passes them.
+2. **The AI engine had nothing to say** — the first package carried chapter titles and canon
+   rows only. Findings=0 was honest but useless; the package now carries current-chunk AI
+   summaries (`ringkasan_bab`), stale ones excluded by the same revision+hash gate.
+3. **Silent total discard** — a 515-token model response produced 0 kept findings with no
+   explanation. `validateDoctorFindings` now returns aggregate drop counters (shape / enum /
+   text / no-evidence), surfaced in the API response and logged as counts only.
+4. **E2E scratch committed by `git add -A`** — including a synthetic-session token file.
+   Stripped from the branch via filter-branch, force-pushed, patterns gitignored. The token
+   belonged to a now-deleted synthetic user, but history hygiene was fixed regardless.
 
 ## Honest limits
 
