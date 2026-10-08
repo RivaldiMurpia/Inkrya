@@ -101,6 +101,8 @@ preview of commit `d33518d` (`inkrya-ifl49tv74`), plus an in-browser pass over t
 | Canon isolation asserted by SQL | PASS — after every run the trap project's `story_facts`/`timeline_events`/`character_knowledge`/`canon_proposals` all stayed at 0 rows |
 | Failure paths: validation (404 unknown project, 400 short topic); user limit → 429 with real numbers | PASS — after seeding a synthetic 22-credit row the meter returned `429 {"error":"Kuota riset web kamu tersisa 0 kredit dari 3 yang dibutuhkan satu riset. Coba lagi besok."}`; probe row deleted after the test |
 | **Bug found live:** PostgREST wraps a set-returning function in an array and stringifies bigint, so the original route read `user_credits_24h` as undefined and the meter never refused | FIXED — `creditUsageRow` normaliser added (unit-tested), redeployed, 429 reproduced on the fixed deployment; caught by this exact probe before any user could hit it |
+| Adversarial review (five lenses, 15 agents, 10 verdicts) | 8 confirmed → all fixed (4 distinct defects); 2 refuted (maxDuration budget; pending-row aging) |
+| RPC fix verified live | PASS — a cross-user row 2h old and the caller's own row 30h old each moved `global_credits_month` only (15→55→62) while `user_credits_24h` stayed at the caller's real 24h figure |
 | Panel renders in a real browser (Orca embedded browser): nav "Riset Tavily", topic submit, notes with citation numbers, source links `rel="noopener noreferrer"`, credit line "Riset ini memakai 3 kredit Tavily. Sisa kuota riset harianmu 9 kredit.", isolation notice, no percentage anywhere | PASS |
 | Honest no-results path | Verified at unit level (pipeline skips the notes call, credits still metered); no live run produced zero results — Tavily returned results for every real query |
 | LangSmith | LLM runs trace via `workflow:'research-agent'` (metadata-only allowlist); the `tavily-search` tool run ships counts only. Live dashboard spot-check not performed — no local `LANGSMITH_API_KEY` in the working environment; tracing state is recorded per row |
@@ -127,7 +129,23 @@ preview of commit `d33518d` (`inkrya-ifl49tv74`), plus an in-browser pass over t
    `AbortSignal.any([AbortSignal.timeout(...), callerSignal])`.
 7. **LangSmith rejects a non-UUID run id** on `updateRun`, so the derived tool-run id is a
    SHA-256 hash shaped into a UUID rather than `<generationId>-tool`.
-8. **PostgREST shape mismatch disabled the meter (live E2E, highest severity)** — a
+8. **The RPC's two columns were the same number (adversarial review, highest severity)** — both
+   output columns came from one identical sum over one OR'd `WHERE`, so `user_credits_24h`
+   returned the *global month* total. Every author was locked out once ~24 credits had been
+   spent by anyone that month, while the 500-credit global ceiling silently never fired; the
+   panel also reported other users' spend as the author's own daily remaining. Four of the five
+   review lenses found it independently. Fixed with two independent subqueries and verified live
+   that a cross-user row and the caller's own 30h-old row each move the global sum only.
+9. **Validator capped before it filtered** (adversarial review) — `validateResearchNotes` sliced
+   to `MAX_NOTES` before validating, so malformed early notes consumed kept slots and valid notes
+   past position six were discarded unassessed. The same defect class Phase 6 fixed.
+10. **Tavily titles were uncapped** (adversarial review) — a pathological page title could push
+    the notes prompt past the 48k ceiling *after* every search had already been paid for. Titles
+    now cap at 200 characters.
+11. **Both research LLM calls shared one trace id** (adversarial review) — LangSmith rejected the
+    second `createRun` as a duplicate and the notes call lost its trace. Per-call UUID now,
+    matching `agent-graph`.
+12. **PostgREST shape mismatch disabled the meter (live E2E, high severity)** — a
    set-returning RPC arrives as an ARRAY with bigint values as strings, so the route's
    `usage?.user_credits_24h` read `undefined` and `researchCreditBudget` always saw 0 used.
    The limit probe against a real deployment returned 200 where it must have returned 429.
@@ -137,6 +155,9 @@ preview of commit `d33518d` (`inkrya-ifl49tv74`), plus an in-browser pass over t
 
 ## Honest limits
 
+- **The per-user daily figure is a rolling 24h window, not a calendar day.** A user who spent
+  the full daily budget at 09:00 can research again after 09:00 tomorrow — correct for a rolling
+  limit, but it will not reset at midnight.
 - **The credit check is not atomic.** Two simultaneous runs can both pass it; the overshoot is
   bounded by one run's worst case (3 credits). Making it atomic needs a counter row with a
   transaction, which this phase deliberately does not add. Stated in the code, not hidden.
