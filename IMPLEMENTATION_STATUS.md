@@ -1,6 +1,19 @@
 # Inkrya implementation checkpoint
 
-## Hackathon upgrade — 2026-09-19 (current authority)
+## Phases 2–6 delivered — 2026-10-08 (current authority)
+
+The Hackathon PRD remains the product authority. Phases 2 (pgvector hybrid retrieval), 3 (Ask
+Your Story), 4 (Agentic Writing), 5 (Canon Update) and 6 (Story Doctor) are delivered and
+verified on Preview; see `docs/PHASE2_3_4_DELIVERY.md`, `docs/PHASE5_DELIVERY.md` and
+`docs/PHASE6_DELIVERY.md`. Phase 6 adds a whole-manuscript Story Doctor
+(`POST /api/memory {action:'doctor'}`): a deterministic check plus one bounded AI pass, every
+finding evidence-resolvable, measured coverage with no health scores, 1 run = 1 quota slot,
+report persisted in AI history. Live E2E on The Last Signal and on a seeded trap project
+passed; all synthetic artifacts reverted. Applied live migrations since the last checkpoint:
+`canon_update_phase5` and `doctor_action_phase6` — never reapply. Phase 1 Indonesian prose
+acceptance remains the open gate; Phase 7 (Tavily), 8 (Evaluation) and 9 (Submission) remain.
+
+## Hackathon upgrade — 2026-09-19 (historical)
 
 The supplied Hackathon PRD supersedes the older roadmap. Phase 1 provider/routing/metadata-tracing code is implemented; live Nebius/Nemotron inference and LangSmith activation remain unverified. Gateway stays default. Read docs/HACKATHON_IMPLEMENTATION.md for the exact delivered scope, phase map and remaining gates, and docs/HACKATHON_SETUP.md for private credential setup. Earlier entries below are chronological history, not current completion claims. No new database migration in this increment.
 

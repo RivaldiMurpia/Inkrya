@@ -2,7 +2,7 @@
 
 Current product authority: [Hackathon PRD](docs/INKRYA_HACKATHON_PRD.md). The existing writing alpha is being upgraded incrementally; it is not the completed hackathon MVP.
 
-Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.md), [Phases 2–4 delivery notes](docs/PHASE2_3_4_DELIVERY.md), and [Nebius/LangSmith setup](docs/HACKATHON_SETUP.md). Phases 2 (pgvector hybrid retrieval), 3 (Ask Your Story) and 4 (Agentic Writing — LangGraph planner/writer/guardian/bounded repair/critic) are delivered and verified on Preview; Phase 1 Indonesian prose quality remains the open gate. No Tavily research or Story Doctor is claimed yet.
+Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.md), the delivery notes for [Phases 2–4](docs/PHASE2_3_4_DELIVERY.md), [Phase 5 Canon Update](docs/PHASE5_DELIVERY.md) and [Phase 6 Story Doctor](docs/PHASE6_DELIVERY.md), and [Nebius/LangSmith setup](docs/HACKATHON_SETUP.md). Phases 2 (pgvector hybrid retrieval), 3 (Ask Your Story), 4 (Agentic Writing — LangGraph planner/writer/guardian/bounded repair/critic), 5 (Canon Update — proposed diff with explicit approval) and 6 (Story Doctor — cross-manuscript checks with evidence) are delivered and verified on Preview; Phase 1 Indonesian prose quality remains the open gate. No Tavily research (Phase 7) is claimed yet.
 
 ## Implemented source
 
@@ -14,9 +14,10 @@ Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.m
 - Conflict blocks automatic overwrites; download local text for manual recovery.
 - Markdown manuscript export from server records.
 - Project content search across chapters, Characters, Story Bible, Notes and Outline; excerpts, pagination and record navigation. Applied live migration: literal_project_search (database/project-search.sql).
-- Memory alpha: per-revision chapter chunks, lexical Ask My Story with source links, per-chunk summaries and pending facts with review. Read MEMORY_STATUS.md for verification and remaining Phase 4 requirements.
-- Krya AI is configured through Vercel AI Gateway with a zero-price model guard, bounded context, request history and usage limits. User confirmed production AI works. See AI_SETUP.md for setup history.
+- Memory alpha: per-revision chapter chunks, lexical Ask My Story with source links, per-chunk summaries and pending facts with review. Read MEMORY_STATUS.md for verification.
+- Krya AI runs on Nebius Token Factory (Nemotron) on Preview with metadata-only LangSmith tracing; Production remains on the zero-price Vercel AI Gateway. See AI_SETUP.md for setup history and HACKATHON_SETUP.md for credentials.
 - Memory indexing runs through database Cron every minute even with the browser closed. Approved current facts help keyword retrieval; pending, ignored and stale facts are excluded.
+- Ask Your Story (grounded Q&A with citations), Tulis dengan Krya (LangGraph planner/writer/guardian/bounded repair/critic with an honest activity feed and Canon Diff proposals) and Story Doctor (whole-manuscript checks with evidence, measured coverage, no invented health scores) are available per project. Applied live migrations: `canon_update_phase5`, `doctor_action_phase6`.
 
 ## Setup
 
@@ -48,7 +49,7 @@ The project URL and publishable key in lib/supabase.ts identify this specific In
 - Version history UI is available from the editor's Riwayat button: comparison, TXT download and restore as a new revision. Browser interaction QA remains pending.
 - Full chapter list fetch will need optimization before long-form scale tests.
 - Characters, Story Bible, flat Outline and Notes are implemented with manual save, revision checks and archive/restore (except Bible). Apply database/story-planning.sql only on fresh databases after foundation; live Inkrya already has this migration.
-- No outline hierarchy/board, semantic RAG or DOCX export yet. Production Gateway generation was verified in the alpha; the new Nebius integration still needs a live inference check.
+- No outline hierarchy/board or DOCX export yet. Nebius integration is live and verified on Preview; Production remains Gateway.
 - Native confirmation dialogs; custom accessible dialog behavior still needs hardening.
 - No billing or analytics configured.
 
