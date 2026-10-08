@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit --incremental false",
-    "test:unit": "node --experimental-strip-types --test tests/hackathon-ai.test.mjs tests/memory-validation.test.mjs tests/story-context.test.mjs tests/editor.test.mjs tests/memory-panel.test.mjs tests/phase1-planb.test.mjs tests/plan-c-corpus.test.mjs tests/agent-validation.test.mjs tests/agent-graph.test.mjs tests/canon-proposals.test.mjs tests/write-panel.test.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/hackathon-ai.test.mjs tests/memory-validation.test.mjs tests/story-context.test.mjs tests/editor.test.mjs tests/memory-panel.test.mjs tests/phase1-planb.test.mjs tests/plan-c-corpus.test.mjs tests/agent-validation.test.mjs tests/agent-graph.test.mjs tests/canon-proposals.test.mjs tests/write-panel.test.mjs tests/doctor-validation.test.mjs tests/doctor.test.mjs tests/doctor-panel.test.mjs",
     "test:plan-c": "node scripts/plan-c-validate.mjs",
     "test:http": "node tests/http-smoke.mjs"
   },

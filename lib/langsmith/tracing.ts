@@ -2,7 +2,7 @@ import {Client} from 'langsmith';
 import {createHash} from 'node:crypto';
 import type {Environment,ModelConfig} from '../ai/models.ts';
 
-export type TraceContext={generationId:string;projectId:string;userId?:string;sourceCount:number;workflow:'krya-assistant'|'memory-ask'|'memory-analyze'|'write-agent'|'provider-smoke'};
+export type TraceContext={generationId:string;projectId:string;userId?:string;sourceCount:number;workflow:'krya-assistant'|'memory-ask'|'memory-analyze'|'write-agent'|'story-doctor'|'provider-smoke'};
 type Usage={inputTokens?:number;outputTokens?:number;totalTokens?:number};
 type Outcome={success:boolean;latencyMs:number;outputCharacters?:number;usage?:Usage};
 export type TraceState='disabled'|'sent'|'failed';

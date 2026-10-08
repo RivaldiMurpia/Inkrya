@@ -2,14 +2,16 @@
 
 Updated: 2026-10-07. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist.
 
-## Current increment: Phases 2–5 delivered; Phase 1 prose gate still open
+## Current increment: Phases 2–6 delivered; Phase 1 prose gate still open
 
 Phase 1 Indonesian prose acceptance remains **INCOMPLETE** (Super and the Ultra/Lightning
-Writer pilots failed the four-case corpus). Phases **2, 3, 4 and 5 are delivered and verified
-on Preview** — see [PHASE2_3_4_DELIVERY.md](PHASE2_3_4_DELIVERY.md) for the schema,
-retrieval, Ask Your Story and Agentic Writing details, the fixed PL/pgSQL ambiguity bug, the
-live verification matrix, and the honest limits. The rest of this contract's Phase 1 history
-below is preserved unchanged. Four persisted application generation IDs were read back from the same LangSmith run IDs with provider/model/task, pseudonymized project/user, source count, exact usage and latency, and metadata-only input/output. The readback made zero inference requests. The follow-up stale-source regression, unit suite, typecheck, local build and Gateway/Nebius signed-out HTTP checks passed. See `PHASE1_ACTIVATION.md` for IDs, deployments and bounded prose measurements.
+Writer pilots failed the four-case corpus). Phases **2, 3, 4, 5 and 6 are delivered and
+verified on Preview** — see [PHASE2_3_4_DELIVERY.md](PHASE2_3_4_DELIVERY.md) and
+[PHASE5_DELIVERY.md](PHASE5_DELIVERY.md) / [PHASE6_DELIVERY.md](PHASE6_DELIVERY.md) for the schema,
+retrieval, Ask Your Story, Agentic Writing, Canon Update and Story Doctor details, the fixed
+PL/pgSQL ambiguity bug, the live verification matrices, and the honest limits. The rest of
+this contract's Phase 1 history below is preserved unchanged. Four persisted application
+generation IDs were read back from the same LangSmith run IDs with provider/model/task, pseudonymized project/user, source count, exact usage and latency, and metadata-only input/output. The readback made zero inference requests. The follow-up stale-source regression, unit suite, typecheck, local build and Gateway/Nebius signed-out HTTP checks passed. See `PHASE1_ACTIVATION.md` for IDs, deployments and bounded prose measurements.
 
 **Plan C private canary decision (2026-09-25):** The user supplied Nebius Support's confirmation that this LoRA has no standard serverless/shared evaluation and Dedicated requires merging with the exact base, custom weights still beta. No Dedicated Endpoint will be created. The [new one-H100 canary plan](../qa/plan-c/PRIVATE_CANARY_GATE.md) uses vLLM 0.29.0 and the existing BF16 base plus the downloaded ~8 MB adapter **without merging**. Only two sealed synthetic held-out prompts, with no reference answers, will be transferred to a future VM; both the base and adapter would get identical prompts and human/mechanical review. One on-demand `gpu-h100-sxm` 80 GB H100, a 200 GiB VM-managed SSD, one-hour deadline from creation, stop request at minute 55 and cleanup after output export yield a **published-price estimate $4.32 now or $4.97 after October 1** for a disk provisioned up to 24 hours, before tax/account adjustments. Offline: adapter/base-ID/config/hash/LoRA-header checks, 6 Python harness tests, Node dataset validator, and shell syntax PASS. Actual GPU load, account capacity/quote, IAM, peak VRAM and installation remain unverified; **no paid VM, inference, second training run or model override was performed**. The dated larger-scope serving estimates below remain historical and do not authorize spend. Phase 1 prose quality is still unproven; Phase 2 blocked; Production Gateway.
 
@@ -69,12 +71,12 @@ Writers still review/copy suggestions; no agent writes manuscript/canon automati
 | 3 Ask Your Story | **Delivered** — story_time, timeline_events, character_knowledge, story context builder, two-hop grounded Q&A, four abstention classes, review RPCs; see `PHASE2_3_4_DELIVERY.md` | CONTRADICTION status unproven live (unit-tested only); benchmarked quality still open |
 | 4 Agentic Writing | **Delivered** — LangGraph JS planner → writer → guardian → bounded repair (≤2) → critic, NDJSON honest activity UI, 1 slot/write; see `PHASE2_3_4_DELIVERY.md` | planner instruction-following imperfect on corpus-distant scenes; prose quality unchanged from Phase 1 gate |
 | 5 Canon Update | **Delivered** — `canon` node after critic proposes fact/event/knowledge from the final draft; `canon_proposals` table; explicit Setujui/Edit/Tolak; atomic revision-safe batch acceptance (`decide_canon_proposals`), per-generation dedup, live retrieval re-indexing verified; headless live E2E on Preview passed; see `PHASE5_DELIVERY.md` | cross-generation dedup and `CONFLICTED`/retraction workflows deferred |
-| 6 Story Doctor | No implementation | Cross-manuscript checks with evidence; report checked coverage; no invented health scores |
+| 6 Story Doctor | **Delivered** — `POST /api/memory {action:'doctor'}` builds a whole-manuscript package, runs a deterministic check (forgotten characters) plus one bounded AI semantic pass (plot holes, timeline, knowledge, relationship drift, world rules, POV, unresolved threads), fail-closed evidence-id validation, measured coverage with explicit skipped checks and no health scores; report persisted in AI history and re-renderable; 1 run = 1 quota slot; live E2E on The Last Signal passed; see `PHASE6_DELIVERY.md` | deterministic engine covers one kind only; thread tracking rides on summaries; no per-finding resolve state |
 | 7 Tavily | No implementation | Intentional opt-in research, bounded queries, citations, isolation from fictional canon, trace tool calls |
 | 8 Evaluation | Synthetic unit/DB alpha tests | LangSmith datasets, baseline comparison, retrieval/continuity/knowledge metrics; Toloka optional |
 | 9 Submission | Existing hosted alpha | Original The Last Signal corpus, accessible demo, public repository/license, before/after history, screenshots, E2E, demo video and submission |
 
-Do not claim Story Doctor, Tavily research, evaluation datasets, full-chapter summaries, or hackathon readiness in this increment. LangGraph and the Continuity Guardian are implemented as of Phase 4 — claim them only with the limits recorded in `PHASE2_3_4_DELIVERY.md`.
+Do not claim Tavily research, evaluation datasets, full-chapter summaries, or hackathon readiness in this increment. LangGraph and the Continuity Guardian are implemented as of Phase 4; Story Doctor as of Phase 6 — claim them only with the limits recorded in `PHASE2_3_4_DELIVERY.md`, `PHASE5_DELIVERY.md` and `PHASE6_DELIVERY.md`.
 
 ## Decisions that prevent coding ambiguity
 

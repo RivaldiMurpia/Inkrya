@@ -7,6 +7,9 @@ import {prepareAskContext,noEvidenceAnswer,answerAsk} from '@/lib/ask';
 import {createHash} from 'node:crypto';
 import {userDatabase} from '@/lib/server-auth';
 import {parseModelJSON,validateInsights,type MemorySource} from '@/lib/memory-validation';
+import {buildDoctorPackage,doctorCoverage,checkForgottenCharacters} from '@/lib/doctor';
+import {validateDoctorFindings} from '@/lib/doctor-validation';
+import {DOCTOR_SYSTEM} from '@/lib/agent-prompts';
 export const maxDuration=60;
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const hash=(text:string)=>createHash('md5').update(text).digest('hex');
@@ -49,7 +52,7 @@ export async function POST(req:Request){
  let body;try{const raw=await req.text();if(raw.length>8000)throw Error();body=JSON.parse(raw)}catch{return Response.json({error:'Permintaan tidak valid.'},{status:400})}
  if(!body||typeof body!=='object'||Array.isArray(body))return Response.json({error:'Permintaan tidak valid.'},{status:400});
  const {projectId,action,question,chunkId}=body;
- if(typeof projectId!=='string'||!uuid.test(projectId)||!['index','ask','analyze'].includes(action))return Response.json({error:'Permintaan tidak valid.'},{status:400});
+ if(typeof projectId!=='string'||!uuid.test(projectId)||!['index','ask','analyze','doctor'].includes(action))return Response.json({error:'Permintaan tidak valid.'},{status:400});
  const {data:p}=await db.from('projects').select('id').eq('id',projectId).maybeSingle();if(!p)return Response.json({error:'Proyek tidak ditemukan.'},{status:404});
  if(action==='index'){
   const {data,error}=await db.rpc('process_memory',{p_project_id:projectId,p_force:true});
@@ -58,7 +61,44 @@ export async function POST(req:Request){
   return Response.json(data);
  }
  if(action==='ask')return ask(db,projectId,question);
+ if(action==='doctor')return doctor(db,projectId);
  return analyze(db,projectId,chunkId);
+}
+
+// Story Doctor (Phase 6): whole-manuscript report. One run = one quota slot; the AI call is
+// bounded, fail-closed, and evidence ids must resolve — a fabricated finding never renders.
+async function doctor(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,projectId:string){
+ let pack;
+ try{pack=await buildDoctorPackage(db,projectId)}catch{return Response.json({error:'Konteks Memory gagal dimuat.'},{status:503})}
+ const coverage=doctorCoverage(pack);
+ // Deterministic engine first — free, auditable, no model involved.
+ const codeFindings=checkForgottenCharacters(pack).map(f=>({
+  engine:'code' as const,kind:f.kind,severity:f.severity,claim:f.claim,explanation:f.explanation,
+  evidence_ids:f.evidence_ids,chapter_id:f.chapter_id,
+  resolvedEvidence:f.evidence_ids.map(id=>({id,label:pack.chapters.some(c=>c.id===id)?`Bab: ${pack.chapters.find(c=>c.id===id)!.title}`:id})),
+ }));
+ let aiFindings:ReturnType<typeof validateDoctorFindings>=[];
+ if(!pack.chapters.length)return Response.json({coverage,findings:codeFindings,aiAvailable:false,warning:null});
+ let prepared;try{prepared=await prepareModel('memory')}catch(e){return Response.json({error:configurationErrorMessage(e)},{status:503})}
+ const {data:run,error}=await db.from('ai_generations').insert({project_id:projectId,action:'doctor',model:prepared.config.provider+':'+prepared.config.id,prompt:`[Story Doctor] Analisis manuskrip`}).select('id').single();
+ if(error)return Response.json({error:error.message.includes('AI_DAILY_LIMIT')?'Batas 20 permintaan AI dalam 24 jam tercapai.':error.message.includes('AI_RATE_LIMIT')?'Tunggu 10 detik sebelum permintaan AI berikutnya.':'Riwayat AI gagal disiapkan.'},{status:429});
+ try{
+  const evidencePackage={
+   chapters:pack.chapters.map(({id,title,position,story_time,ready,summarized})=>({id,title,position,story_time,ready,summarized})),
+   facts:pack.facts,events:pack.events,knowledge:pack.knowledge,characters:pack.characters,
+   world_rules:pack.worldRules,
+   pengingat:'Urutan bab TIDAK sama dengan urutan waktu. Nilai konflik pada story_time, bukan posisi bab.',
+  };
+  const result=await generateKryaText(prepared,{maxOutputTokens:1800,timeoutMs:35000,system:DOCTOR_SYSTEM,prompt:JSON.stringify(evidencePackage)},{generationId:run.id,projectId,userId:db.authenticatedUserId,sourceCount:pack.chapters.length,workflow:'story-doctor'});
+  aiFindings=validateDoctorFindings(parseModelJSON(result.text),pack);
+  const findings=[...aiFindings.map(f=>({...f,engine:'ai' as const})),...codeFindings];
+  const {error:history}=await db.from('ai_generations').update({result:JSON.stringify({coverage,findings}),status:'complete',token_usage:{...result.usage,provider:result.provider,latency_ms:result.latencyMs,trace_status:result.tracing}}).eq('id',run.id);
+  return Response.json({coverage,findings,aiAvailable:true,warning:history?'Laporan belum tersimpan di riwayat.':result.tracing==='failed'?'Laporan tersimpan; trace observabilitas belum terkirim.':null});
+ }catch(e){
+  // Deterministic findings still answer — the doctor degrades to engine='code', honestly.
+  await db.from('ai_generations').update({status:'error'}).eq('id',run.id);
+  return Response.json({coverage,findings:codeFindings,aiAvailable:false,warning:'Pemeriksaan AI gagal; hanya hasil pemeriksaan otomatis yang ditampilkan.'});
+ }
 }
 
 async function ask(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,projectId:string,question:unknown){
@@ -80,8 +120,7 @@ async function ask(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,proj
  }
 }
 
-async function analyze(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,projectId:string,chunkId:unknown){
- if(typeof chunkId!=='string'||!uuid.test(chunkId))return Response.json({error:'Pilih bagian naskah.'},{status:400});
+async function analyze(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,projectId:string,chunkId:unknown){ if(typeof chunkId!=='string'||!uuid.test(chunkId))return Response.json({error:'Pilih bagian naskah.'},{status:400});
  const {data:s}=await db.from('story_chunks').select('*').eq('project_id',projectId).eq('id',chunkId).maybeSingle();if(!s)return Response.json({error:'Sumber tidak ditemukan.'},{status:404});
  const {data:c}=await db.from('chapters').select('title,plain_text,revision_number,story_time').eq('id',s.chapter_id).single();if(!c||c.revision_number!==s.source_revision||hash(c.plain_text)!==s.source_hash)return Response.json({error:'Bab telah berubah. Perbarui Memory terlebih dahulu.'},{status:409});
  const {data:existing}=await db.from('memory_insights').select('id').eq('chunk_id',chunkId).maybeSingle();if(existing)return Response.json({saved:true,existing:true});
