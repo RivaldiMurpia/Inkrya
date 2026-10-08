@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {db} from '@/lib/supabase';
+import {WRITER_MODEL_CHOICES} from '@/lib/ai/models';
 import type {Chapter} from './studio';
 
 type AgentStage='context'|'plan'|'draft'|'guardian'|'recheck'|'repair'|'critic'|'canon';
@@ -52,6 +53,9 @@ export default function WritePanel({projectId,chapters,onChapterCreated}:{projec
  const [decided,setDecided]=useState<Record<string,CanonProposal['status']>>({}),[busy,setBusy]=useState(false);
  const [proposals,setProposals]=useState<CanonProposal[]>([]);
  const [attached,setAttached]=useState(false);
+ // Writer model choice: the two owner-accepted prose-gate models. Empty value = the
+ // server default (env WRITER_MODEL); the server allowlists the ID either way.
+ const [writerModel,setWriterModel]=useState('');
  const active=useRef(true),controller=useRef<AbortController|null>(null);
  useEffect(()=>{active.current=true;return()=>{active.current=false;controller.current?.abort()}},[projectId]);
  async function loadProposals(){
@@ -87,7 +91,7 @@ export default function WritePanel({projectId,chapters,onChapterCreated}:{projec
   try{
    const {data}=await db.auth.getSession();
    if(!data.session)throw Error('Login diperlukan.');
-   const res=await fetch('/api/write',{method:'POST',headers:{Authorization:`Bearer ${data.session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({projectId,instruction:instruction.trim()}),signal:ctl.signal});
+   const res=await fetch('/api/write',{method:'POST',headers:{Authorization:`Bearer ${data.session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({projectId,instruction:instruction.trim(),writerModel:writerModel||undefined}),signal:ctl.signal});
    if(!res.ok||!res.body){const json=await res.json().catch(()=>({error:'Penulisan gagal.'}));throw Error(json.error||'Penulisan gagal.')}
    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
    for(;;){
@@ -146,6 +150,12 @@ export default function WritePanel({projectId,chapters,onChapterCreated}:{projec
   <form className="memory-question" onSubmit={e=>{e.preventDefault();void submit()}}>
    <h2>Instruksi bab</h2>
    <label>Instruksi penulis<textarea required minLength={3} maxLength={2000} value={instruction} onChange={e=>setInstruction(e.target.value)} placeholder="Lanjutkan adegan saat ini. Mira mengonfrontasi Dr. Vale soal Project Helios, dan Arka mengeluarkan pistoler untuk memaksa dia menjawab."/></label>
+   <label>Model penulis
+    <select value={writerModel} onChange={e=>setWriterModel(e.target.value)}>
+     <option value="">Bawaan server</option>
+     {WRITER_MODEL_CHOICES.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
+    </select>
+   </label>
    <div className="row">
     <button className="primary" disabled={running||applying}>{running?'Krya menulis…':'Tulis bab dengan Krya'}</button>
     {running&&<button type="button" className="secondary" onClick={()=>controller.current?.abort()}>Hentikan</button>}

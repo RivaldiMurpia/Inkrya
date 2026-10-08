@@ -20,6 +20,10 @@ export async function POST(req:Request){
  let body;try{const raw=await req.text();if(raw.length>8000)throw Error();body=JSON.parse(raw)}catch{return Response.json({error:'Permintaan tidak valid.'},{status:400})}
  if(!body||typeof body!=='object'||Array.isArray(body))return Response.json({error:'Permintaan tidak valid.'},{status:400});
  const {projectId,instruction}=body;
+ // Per-request writer choice; undefined keeps the server default. resolveModelConfig
+ // allowlists the ID to the owner-accepted models — an unknown value is a 400, never
+ // a fallback to some other model.
+ const writerModel=typeof body.writerModel==='string'&&body.writerModel.trim()?body.writerModel.trim():undefined;
  if(typeof projectId!=='string'||!uuid.test(projectId)||typeof instruction!=='string'||instruction.trim().length<3||instruction.length>2000)return Response.json({error:'Instruksi harus 3–2.000 karakter.'},{status:400});
  const {data:p}=await db.from('projects').select('id').eq('id',projectId).maybeSingle();
  if(!p)return Response.json({error:'Proyek tidak ditemukan.'},{status:404});
@@ -30,12 +34,15 @@ export async function POST(req:Request){
  try{
   prepared={
    planner:await prepareModel('planner'),
-   writer:await prepareModel('writer'),
+   writer:await prepareModel('writer',undefined,writerModel),
    continuity:await prepareModel('continuity'),
    critic:await prepareModel('critic'),
    canon:await prepareModel('memory'),
   };
- }catch(e){return Response.json({error:configurationErrorMessage(e)},{status:503})}
+ }catch(e){
+  if(e instanceof Error&&e.message==='WRITER_MODEL_NOT_ACCEPTED')return Response.json({error:'Model penulis pilihan tidak tersedia. Pilih salah satu model yang disediakan.'},{status:400});
+  return Response.json({error:configurationErrorMessage(e)},{status:503});
+ }
  // One write request = one ai_generations row = one slot of the 20/24h user quota.
  const modelLabel=ROLES.map(role=>`${role}=${prepared[role].config.id}`).join(';');
  const {data:run,error}=await db.from('ai_generations').insert({

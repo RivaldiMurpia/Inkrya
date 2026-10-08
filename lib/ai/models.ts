@@ -5,6 +5,15 @@ export type Environment = Record<string, string | undefined>;
 export type ModelConfig = {provider:'gateway'|'nebius'; id:string; task:ModelTask; label:string; baseURL?:string};
 export const NEBIUS_BASE_URL = 'https://api.tokenfactory.nebius.com/v1';
 export const LEGACY_MODEL = 'inclusionai/ling-3.0-flash-vl-free';
+// The two writer models the owner accepted from the 2026-10-09 few-shot prose
+// experiment (docs/evidence/phase1-fewshot-2026-10-09.md): both passed the
+// four-case mechanical screen on two runs each. A per-request choice is
+// allowlisted to these IDs — nothing else may flow from a request to the provider.
+export const WRITER_ACCEPTED_MODELS = ['openai/gpt-oss-120b','deepseek-ai/DeepSeek-V4-Flash-0731'] as const;
+export const WRITER_MODEL_CHOICES:ReadonlyArray<{id:string;label:string}> = [
+  {id:'openai/gpt-oss-120b',label:'GPT-OSS 120B'},
+  {id:'deepseek-ai/DeepSeek-V4-Flash-0731',label:'DeepSeek V4 Flash'},
+];
 
 export function configuredProvider(env:Environment=process.env):'gateway'|'nebius' {
   const value=env.INKRYA_AI_PROVIDER?.trim()||'gateway';
@@ -12,8 +21,15 @@ export function configuredProvider(env:Environment=process.env):'gateway'|'nebiu
   return value;
 }
 
-export function resolveModelConfig(task:ModelTask,env:Environment=process.env):ModelConfig {
+export function resolveModelConfig(task:ModelTask,env:Environment=process.env,requestWriterOverride?:string):ModelConfig {
   if(!MODEL_TASKS.includes(task)) throw Error('INVALID_MODEL_TASK');
+  // A per-request choice is a user-facing trust boundary: allowlist it to the
+  // two models the owner accepted before any other check or env processing.
+  // Env-configured writers keep their existing format/family rules.
+  if(requestWriterOverride!==undefined) {
+    if(task!=='writer') throw Error('INVALID_MODEL_OVERRIDE');
+    if(!WRITER_ACCEPTED_MODELS.includes(requestWriterOverride as never)) throw Error('WRITER_MODEL_NOT_ACCEPTED');
+  }
   if(configuredProvider(env)==='gateway') return {provider:'gateway',id:LEGACY_MODEL,task,label:'Ling 3.0 Flash VL (Free)'};
   if(!env.NEBIUS_API_KEY?.trim()) throw Error('NEBIUS_API_KEY_MISSING');
   const baseURL=(env.NEBIUS_BASE_URL?.trim()||NEBIUS_BASE_URL).replace(/\/$/,'');
@@ -22,7 +38,7 @@ export function resolveModelConfig(task:ModelTask,env:Environment=process.env):M
   // A present but blank role override is a configuration error; never fall
   // through to the shared baseline after an operator selects that role.
   const override=env[`${task.toUpperCase()}_MODEL`];
-  const id=(override===undefined?env.NEBIUS_TEXT_MODEL||'':override).trim();
+  const id=(requestWriterOverride??(override===undefined?env.NEBIUS_TEXT_MODEL||'':override)).trim();
   if(!id) throw Error('NEBIUS_MODEL_MISSING');
   // The official hackathon rule requires at least one NVIDIA model on Nebius,
   // not a single family for every role. Reasoning roles stay on Nemotron;

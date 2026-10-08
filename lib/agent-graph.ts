@@ -35,6 +35,11 @@ const GUARDIAN_CONTENT_CAP=1200; // guardian needs claim+id, not full prose (inp
 // + 2×repair 45s + critic 25s (×2) + canon 25s (×2) = 50+45+150+90+50+50 = 435s worst-worst...
 // bounded by typical latency (~10-25s/call). Keep budgets tight: maxDuration is 300s.
 const TIMEOUT={planner:25000,writer:45000,continuity:25000,critic:25000,canon:25000} as const;
+// Writer budget depends on the selected model: gpt-oss-120b spends several hundred
+// analysis tokens before its final text (recorded usage, 2026-10-09), so its writer
+// budget is raised; DeepSeek and Super stay at 1800. generateKryaText enforces the
+// overall 2400 ceiling.
+export function writerTokenBudget(modelId:string):number{return modelId==='openai/gpt-oss-120b'?2400:1800}
 const TOKENS={planner:1400,writer:1800,continuity:1200,critic:900,canon:2400} as const;
 
 type Emit=(step:AgentStep)=>void;
@@ -71,9 +76,11 @@ const WriteState=Annotation.Root({
 });
 
 // Build per request so node closures capture this request's emit/call/limits.
-function buildWriteGraph(call:WriteCallFn,emit:Emit,signal?:AbortSignal){
+function buildWriteGraph(call:WriteCallFn,emit:Emit,writerBudget:number,signal?:AbortSignal){
  const nodeCall=async(role:Role,system:string,prompt:string)=>{
-  return await call(role,system,prompt,TOKENS[role]);
+  // Writer budget follows the selected model (gpt-oss analysis channel); other roles
+  // keep their fixed budgets.
+  return await call(role,system,prompt,role==='writer'?writerBudget:TOKENS[role]);
  };
  // JSON nodes retry once on a malformed body: models intermittently emit a stray comma or
  // truncated object, and a second draw clears it without spending another quota slot.
@@ -171,6 +178,9 @@ export async function runWriteGraph(input:{
 }):Promise<WriteResult>{
  const {db,projectId,instruction,userId}=input;
  const signal=input.signal;
+ // Writer budget follows the selected model (gpt-oss spends analysis tokens before its
+ // final text). An injected-call test fixture may carry an empty prepared slot.
+ const writerBudget=input.prepared.writer?.config?.id!==undefined?writerTokenBudget(input.prepared.writer.config.id):TOKENS.writer;
  const steps:AgentStep[]=[];
  const totals:TokenTotals={inputTokens:0,outputTokens:0};
  const emit=(step:AgentStep)=>{steps.push(step);input.emit?.(step)};
@@ -200,7 +210,7 @@ export async function runWriteGraph(input:{
  if(!context.evidence.length)throw Error('NO_EVIDENCE');
  emit({stage:'context',detail:`Konteks cerita siap · ${context.evidence.length} bagian relevan · ${context.timeline.length} peristiwa · ${context.knowledge.length} pengetahuan karakter`});
 
- const graph=buildWriteGraph(call,emit,signal);
+ const graph=buildWriteGraph(call,emit,writerBudget,signal);
  const final=await graph.invoke(
   {instruction,context,plan:null,draft:'',issues:[],findings:[],repairAttempts:0,report:null,proposals:[]},
   {signal,recursionLimit:16},

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {MODEL_TASKS,resolveModelConfig,configuredProvider,NEBIUS_BASE_URL,configurationErrorMessage} from '../lib/ai/models.ts';
+import {MODEL_TASKS,resolveModelConfig,configuredProvider,NEBIUS_BASE_URL,configurationErrorMessage,WRITER_ACCEPTED_MODELS,WRITER_MODEL_CHOICES} from '../lib/ai/models.ts';
+import {WRITER_FEW_SHOT} from '../lib/agent-prompts.ts';
 import {taskForAction} from '../lib/ai/router.ts';
 import {createNebiusModel,verifyNebiusModel,aiConfigurationStatus} from '../lib/ai/provider.ts';
 import {generateKryaText} from '../lib/ai/generate.ts';
@@ -135,4 +136,38 @@ test('Embedding call sends documented body only and validates dimension',async()
 });
 test('Ask prompt contract requires status and forbids guessing',()=>{
   assert.match(MEMORY_ASK,/status/);assert.match(MEMORY_ASK,/NOT_ESTABLISHED/);assert.match(MEMORY_ASK,/CONTRADICTION/);assert.match(MEMORY_ASK,/NO_EVIDENCE/);assert.match(MEMORY_ASK,/story_time/);
+});
+
+
+test('Per-request writer override is allowlisted to the two accepted prose-gate models',()=>{
+  assert.deepEqual(WRITER_ACCEPTED_MODELS,['openai/gpt-oss-120b','deepseek-ai/DeepSeek-V4-Flash-0731']);
+  assert.equal(WRITER_MODEL_CHOICES.length,2);
+  const accepted=resolveModelConfig('writer',env,'openai/gpt-oss-120b');
+  assert.equal(accepted.id,'openai/gpt-oss-120b');
+  assert.equal(resolveModelConfig('writer',{...env,WRITER_MODEL:'publisher/synthetic-writer'},'deepseek-ai/DeepSeek-V4-Flash-0731').id,'deepseek-ai/DeepSeek-V4-Flash-0731');
+  for(const bad of ['publisher/synthetic-writer','nvidia/nemotron-3-super-120b-a12b','https://malicious.invalid/model','openai/gpt-oss-20b','']){
+    assert.throws(()=>resolveModelConfig('writer',env,bad),/WRITER_MODEL_NOT_ACCEPTED/);
+  }
+  // Per-request overrides apply to the writer task only.
+  assert.throws(()=>resolveModelConfig('planner',env,'openai/gpt-oss-120b'),/INVALID_MODEL_OVERRIDE/);
+});
+
+test('Accepted writer models send prose-gate sampling and receive the few-shot example',async()=>{
+  for(const id of ['openai/gpt-oss-120b','deepseek-ai/DeepSeek-V4-Flash-0731']){
+    const modelConfig={...config,id,task:'writer'};
+    let sent=null;
+    const request=async(url,init)=>{sent=JSON.parse(init.body);return completion();};
+    const result=await generateKryaText({config:modelConfig,model:createNebiusModel(modelConfig,'test',request)},{system:'Prosa system.',prompt:'Fixture',maxOutputTokens:100},context);
+    assert.equal(sent.temperature,0.2);
+    assert.equal(sent.top_p,0.95);
+    assert.deepEqual(sent.chat_template_kwargs,{enable_thinking:false});
+    // The few-shot example reached the model as part of the system message.
+    assert.ok(sent.messages[0].content.includes(WRITER_FEW_SHOT.trim().slice(40,120)));
+  }
+  // Super sampling unchanged, and it receives no few-shot.
+  const superModel={...config,id:'nvidia/nemotron-3-super-120b-a12b'};
+  let superSent=null;
+  await generateKryaText({config:superModel,model:createNebiusModel(superModel,'test',async(u,i)=>{superSent=JSON.parse(i.body);return completion();})},{system:'Prosa system.',prompt:'Fixture',maxOutputTokens:100},context);
+  assert.equal(superSent.temperature,1);
+  assert.ok(!superSent.messages[0].content.includes('Accepted prose'));
 });

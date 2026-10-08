@@ -18,6 +18,7 @@ async function componentUrl(url){
  const imports=[...code.matchAll(/from ["']([^"']+)["']/g)];
  for(const [match,specifier] of imports){
   const resolved=specifier==='@/lib/supabase'?new URL('./mock-db.mjs',import.meta.url).href
+   :specifier==='@/lib/ai/models'?new URL('../../lib/ai/models.ts',import.meta.url).href
    :specifier.startsWith('.')?await componentUrl(new URL(specifier+'.tsx',url))
    :import.meta.resolve(specifier);
   code=code.replace(match,`from ${JSON.stringify(resolved)}`);

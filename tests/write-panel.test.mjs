@@ -163,3 +163,26 @@ test('Canon diff: proposals render, decisions gated until the draft is applied',
   assert.equal(decide.args.p_edits,null);
  }finally{await act(async()=>root.unmount());container.remove();globalThis.fetch=originalFetch}
 });
+
+test('Writer model selector sends the chosen accepted model with the write request',async()=>{
+ const originalFetch=globalThis.fetch;
+ let sentBody=null;
+ setDatabase({auth:{getSession:async()=>({data:{session:{access_token:'synthetic-session'}}})},from:()=>({select(){return this},eq(){return this},insert(){return this},update(){return this}}),rpc:()=>Promise.resolve({data:null,error:null})});
+ globalThis.fetch=async(url,init)=>{
+  if(String(url).includes('/api/write')&&init?.body){sentBody=JSON.parse(init.body);return ndjson([{type:'result',draft:'Draf pilihan model.',plan:null,issues:[],findings:[],resolved:true,repairAttempts:0,critic:null,steps:[],warning:null}])}
+  return originalFetch(url,init);
+ };
+ const container=document.createElement('div');document.body.append(container);const root=createRoot(container);
+ try{
+  await act(async()=>root.render(React.createElement(WritePanel,{projectId:'synthetic-project',chapters:[],onChapterCreated:()=>{}})));
+  const select=container.querySelector('select');
+  assert.ok(select,'writer model selector exists');
+  const options=[...select.querySelectorAll('option')].map(o=>o.value);
+  assert.deepEqual(options.filter(Boolean).sort(),['deepseek-ai/DeepSeek-V4-Flash-0731','openai/gpt-oss-120b']);
+  select.value='deepseek-ai/DeepSeek-V4-Flash-0731';
+  select.dispatchEvent(new Event('change',{bubbles:true}));
+  await act(async()=>type(container,'Lanjutkan adegan.'));
+  await act(async()=>button(container,'Tulis bab dengan Krya').click());
+  assert.equal(sentBody.writerModel,'deepseek-ai/DeepSeek-V4-Flash-0731');
+ }finally{await act(async()=>root.unmount());container.remove();globalThis.fetch=originalFetch}
+});

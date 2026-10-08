@@ -39,8 +39,8 @@ export async function aiConfigurationStatus(env:Environment=process.env) {
   }
 }
 
-export async function prepareModel(task:ModelTask,env:Environment=process.env) {
-  const config=resolveModelConfig(task,env);
+export async function prepareModel(task:ModelTask,env:Environment=process.env,requestWriterOverride?:string) {
+  const config=resolveModelConfig(task,env,requestWriterOverride);
   if(config.provider==='gateway') {
     await verifyFreeModel();
     return {config,model:config.id};
