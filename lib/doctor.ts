@@ -30,7 +30,7 @@ export type Coverage={
 export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Promise<DoctorPackage>{
  const [chaptersResult,charsResult,bibleResult]=await Promise.all([
   db.from('chapters').select('id,title,position,story_time,plain_text').eq('project_id',projectId).order('position'),
-  db.from('characters').select('name,aliases,role').eq('project_id',projectId).eq('include_in_ai_context',true).is('deleted_at',null).limit(100),
+  db.from('characters').select('id,name,aliases,role').eq('project_id',projectId).eq('include_in_ai_context',true).is('deleted_at',null).limit(100),
   db.from('story_bibles').select('world_rules').eq('project_id',projectId).maybeSingle(),
  ]);
  if(chaptersResult.error||charsResult.error||bibleResult.error)throw Error('CONTEXT_READ_FAILED');
@@ -50,16 +50,18 @@ export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Prom
  const summarizedChapters=new Set((chunkRows??[]).map((r:{chunk_id:string})=>chapterOfChunk.get(r.chunk_id)).filter(Boolean));
 
  // Canonical canon rows only (status gates mirror current_timeline_events/current_character_knowledge).
+ // current_character_knowledge returns nothing without character ids, so the tracked cast ids pass in.
+ const castRows=(charsResult.data??[]) as {id:string;name:string;aliases:string[];role:string}[];
  const [factsResult,eventsResult,knowledgeResult]=await Promise.all([
   db.from('story_facts').select('id,claim').eq('project_id',projectId).in('status',['approved','CANON']).limit(200),
   db.rpc('current_timeline_events',{p_project_id:projectId,p_preferred_chunk_ids:[]}),
-  db.rpc('current_character_knowledge',{p_project_id:projectId,p_character_ids:null}),
+  db.rpc('current_character_knowledge',{p_project_id:projectId,p_character_ids:castRows.map(c=>c.id)}),
  ]);
  if(factsResult.error||eventsResult.error||knowledgeResult.error)throw Error('CONTEXT_READ_FAILED');
 
  // Deterministic last-seen scan: the reading-order position of the last chapter whose
  // plain_text mentions the character's name or an alias (case-insensitive).
- const cast=(charsResult.data??[]) as {name:string;aliases:string[];role:string}[];
+ const cast=castRows;
  const doctorChapters:DoctorChapter[]=chapters.map((chapter,index)=>{
   const lower=chapter.plain_text.toLocaleLowerCase();
   const seenCharacters=cast
@@ -77,8 +79,7 @@ export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Prom
   facts:(factsResult.data??[]).map((f:{id:string;claim:string})=>({id:f.id,claim:f.claim})),
   events:(eventsResult.data??[]).map((e:{id:string;title:string;story_time:string})=>({id:e.id,title:e.title,story_time:e.story_time})),
   knowledge:(knowledgeResult.data??[]).map((k:{id:string;character_name:string;statement:string})=>({id:k.id,character_name:k.character_name,statement:k.statement})),
-  characters:cast.map(({name,aliases,role})=>({name,aliases:aliases??[],role})),
-  worldRules:bibleResult.data?.world_rules?.trim()||null,
+  characters:cast.map(({name,aliases,role})=>({name,aliases:aliases??[],role})),  worldRules:bibleResult.data?.world_rules?.trim()||null,
  };
 }
 
