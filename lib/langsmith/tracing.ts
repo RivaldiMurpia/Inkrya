@@ -2,7 +2,7 @@ import {Client} from 'langsmith';
 import {createHash} from 'node:crypto';
 import type {Environment,ModelConfig} from '../ai/models.ts';
 
-export type TraceContext={generationId:string;projectId:string;userId?:string;sourceCount:number;workflow:'krya-assistant'|'memory-ask'|'memory-analyze'|'write-agent'|'story-doctor'|'provider-smoke'};
+export type TraceContext={generationId:string;projectId:string;userId?:string;sourceCount:number;workflow:'krya-assistant'|'memory-ask'|'memory-analyze'|'write-agent'|'story-doctor'|'research-agent'|'provider-smoke'};
 type Usage={inputTokens?:number;outputTokens?:number;totalTokens?:number};
 type Outcome={success:boolean;latencyMs:number;outputCharacters?:number;usage?:Usage};
 export type TraceState='disabled'|'sent'|'failed';
@@ -42,4 +42,29 @@ export async function startTrace(context:TraceContext,config:ModelConfig,inputCh
       return 'sent';
     } catch { return 'failed'; }
   };
+}
+
+// Phase 7: one metadata-only tool run per research run's Tavily searches. Counts only —
+// query text, source URLs, and note text never leave the app. The run id derives from the
+// generation id so a retried pipeline cannot orphan the tool run.
+export type ToolTraceContext={generationId:string;projectId:string;tool:'tavily-search';queryCount:number;sourceCount:number;credits:number};
+// LangSmith rejects a non-UUID run id on updateRun, and the derived id must be stable so a
+// retried pipeline cannot orphan the tool run — so hash the generation id into a UUID shape.
+const derivedRunId=(generationId:string,suffix:string):string=>{
+ const hex=createHash('sha256').update(`${generationId}:${suffix}`).digest('hex').slice(0,32);
+ return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+};
+export async function traceToolRun(context:ToolTraceContext,env:Environment=process.env,request:typeof fetch=fetch):Promise<TraceState> {
+  if(env.LANGSMITH_TRACING!=='true') return 'disabled';
+  let client:Client|null=null,started=false;
+  try {
+    client=createTraceClient(env,request);
+    if(client) {
+      const toolId=derivedRunId(context.generationId,'tool-search');
+      await client.createRun({id:toolId,name:`Krya ${context.tool}`,run_type:'tool',project_name:env.LANGSMITH_PROJECT||'inkrya-hackathon',start_time:Date.now(),inputs:{query_count:context.queryCount,source_count:context.sourceCount,credits:context.credits},extra:{metadata:{project_id:pseudonym(context.projectId),tool:context.tool,content_logging:false}}});
+      await client.updateRun(toolId,{end_time:Date.now(),outputs:{success:true,queries:context.queryCount,sources:context.sourceCount,credits:context.credits}});
+      started=true;
+    }
+  } catch { /* observability must never break a paid run */ }
+  return started?'sent':'failed';
 }
