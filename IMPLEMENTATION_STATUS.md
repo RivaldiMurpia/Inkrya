@@ -1,17 +1,22 @@
 # Inkrya implementation checkpoint
 
-## Phases 2–6 delivered — 2026-10-08 (current authority)
+## Phases 2–7 delivered — 2026-10-08 (current authority)
 
 The Hackathon PRD remains the product authority. Phases 2 (pgvector hybrid retrieval), 3 (Ask
-Your Story), 4 (Agentic Writing), 5 (Canon Update) and 6 (Story Doctor) are delivered and
-verified on Preview; see `docs/PHASE2_3_4_DELIVERY.md`, `docs/PHASE5_DELIVERY.md` and
-`docs/PHASE6_DELIVERY.md`. Phase 6 adds a whole-manuscript Story Doctor
-(`POST /api/memory {action:'doctor'}`): a deterministic check plus one bounded AI pass, every
-finding evidence-resolvable, measured coverage with no health scores, 1 run = 1 quota slot,
-report persisted in AI history. Live E2E on The Last Signal and on a seeded trap project
-passed; all synthetic artifacts reverted. Applied live migrations since the last checkpoint:
-`canon_update_phase5` and `doctor_action_phase6` — never reapply. Phase 1 Indonesian prose
-acceptance remains the open gate; Phase 7 (Tavily), 8 (Evaluation) and 9 (Submission) remain.
+Your Story), 4 (Agentic Writing), 5 (Canon Update), 6 (Story Doctor) and 7 (Tavily Research)
+are delivered and
+verified on Preview; see `docs/PHASE2_3_4_DELIVERY.md`, `docs/PHASE5_DELIVERY.md`,
+`docs/PHASE6_DELIVERY.md` and `docs/PHASE7_DELIVERY.md`. Phase 6 adds a whole-manuscript
+Story Doctor (`POST /api/memory {action:'doctor'}`): a deterministic check plus one bounded
+AI pass, every finding evidence-resolvable, measured coverage with no health scores, 1 run =
+1 quota slot, report persisted in AI history. Phase 7 adds an opt-in research panel
+(`POST /api/research`): a bounded query plan, at most 3 Tavily searches at pinned basic
+depth, citation-validated notes in Indonesian, a separate Tavily credit meter, and no path
+from research output to any canon table. Live E2E on The Last Signal and on a seeded trap
+project passed; all synthetic artifacts reverted. Applied live migrations since the last
+checkpoint: `canon_update_phase5`, `doctor_action_phase6`, `research_action_phase7` and
+`research_credit_usage_phase7` — never reapply. Phase 1 Indonesian prose acceptance remains
+the open gate; Phase 8 (Evaluation) and 9 (Submission) remain.
 
 ## Hackathon upgrade — 2026-09-19 (historical)
 

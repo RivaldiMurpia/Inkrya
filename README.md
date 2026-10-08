@@ -2,7 +2,7 @@
 
 Current product authority: [Hackathon PRD](docs/INKRYA_HACKATHON_PRD.md). The existing writing alpha is being upgraded incrementally; it is not the completed hackathon MVP.
 
-Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.md), the delivery notes for [Phases 2–4](docs/PHASE2_3_4_DELIVERY.md), [Phase 5 Canon Update](docs/PHASE5_DELIVERY.md) and [Phase 6 Story Doctor](docs/PHASE6_DELIVERY.md), and [Nebius/LangSmith setup](docs/HACKATHON_SETUP.md). Phases 2 (pgvector hybrid retrieval), 3 (Ask Your Story), 4 (Agentic Writing — LangGraph planner/writer/guardian/bounded repair/critic), 5 (Canon Update — proposed diff with explicit approval) and 6 (Story Doctor — cross-manuscript checks with evidence) are delivered and verified on Preview; Phase 1 Indonesian prose quality remains the open gate. No Tavily research (Phase 7) is claimed yet.
+Start with [implementation status and phase map](docs/HACKATHON_IMPLEMENTATION.md), the delivery notes for [Phases 2–4](docs/PHASE2_3_4_DELIVERY.md), [Phase 5 Canon Update](docs/PHASE5_DELIVERY.md) and [Phase 6 Story Doctor](docs/PHASE6_DELIVERY.md), [Phase 7 Tavily Research](docs/PHASE7_DELIVERY.md), and [Nebius/LangSmith setup](docs/HACKATHON_SETUP.md). Phases 2 (pgvector hybrid retrieval), 3 (Ask Your Story), 4 (Agentic Writing — LangGraph planner/writer/guardian/bounded repair/critic), 5 (Canon Update — proposed diff with explicit approval), 6 (Story Doctor — cross-manuscript checks with evidence) and 7 (Tavily Research — opt-in cited research with a separate credit meter) are delivered and verified on Preview; Phase 1 Indonesian prose quality remains the open gate. No evaluation datasets (Phase 8) are claimed yet.
 
 ## Implemented source
 

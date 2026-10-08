@@ -13,12 +13,13 @@ The live Inkrya project (`ecurjotykfqiejrpczdm`) already has every migration app
 5. `database/agent-writing.sql` — `ai_generations.action` gains `'write'`.
 6. `database/memory-phase5.sql` — `canon_proposals` + canon RPCs (`canon_update_phase5`).
 7. `database/doctor-phase6.sql` — `ai_generations.action` gains `'doctor'` (`doctor_action_phase6`).
+8. `database/phase7-research.sql` — `ai_generations.action` gains `'research'` (`research_action_phase7`) and the Tavily credit meter RPC (`research_credit_usage_phase7`).
 
-Steps 5 and 7 discover and replace the auto-named action CHECK constraint; on a fresh database run them in this order or the later one finds the constraint the earlier one already widened (idempotent outcome either way). Check RLS advisors after applying.
+Steps 5, 7 and 8 discover and replace the auto-named action CHECK constraint; on a fresh database run them in this order or the later one finds the constraint the earlier one already widened (idempotent outcome either way). Check RLS advisors after applying.
 
 ## 1. Obtain and configure credentials
 
-Required now: `NEBIUS_API_KEY`, `LANGSMITH_API_KEY`. Optional for organization-scoped LangSmith keys: `LANGSMITH_WORKSPACE_ID`. `TAVILY_API_KEY` is needed for Phase 7, not this release. No additional chat plugin is required to call these application APIs.
+Required now: `NEBIUS_API_KEY`, `LANGSMITH_API_KEY`. Optional for organization-scoped LangSmith keys: `LANGSMITH_WORKSPACE_ID`. `TAVILY_API_KEY` powers the Phase 7 research panel (it fails closed with 503 without it); `TAVILY_DAILY_CREDITS_PER_USER` (default 24) and `TAVILY_MONTHLY_CREDITS` (default 500) tune the separate Tavily credit meter — these are not the 20/24h LLM quota. No additional chat plugin is required to call these application APIs.
 
 Use `NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1`. Alternate arbitrary endpoints are deliberately rejected. Never use a `NEXT_PUBLIC_` prefix for these keys.
 
