@@ -85,6 +85,9 @@ async function doctor(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,p
  try{
   const evidencePackage={
    chapters:pack.chapters.map(({id,title,position,story_time,ready,summarized})=>({id,title,position,story_time,ready,summarized})),
+   // Summaries are the AI engine's prose basis: current-chunk AI summaries in reading order,
+   // citable as evidence ids just like canon rows.
+   ringkasan_bab:pack.summaries.sort((a,b)=>a.title.localeCompare(b.title,undefined,{numeric:true})||a.chunk_index-b.chunk_index).map(s=>({id:s.chunk_id,bab:s.title,bagian:s.chunk_index+1,ringkasan:s.summary})),
    facts:pack.facts,events:pack.events,knowledge:pack.knowledge,characters:pack.characters,
    world_rules:pack.worldRules,
    pengingat:'Urutan bab TIDAK sama dengan urutan waktu. Nilai konflik pada story_time, bukan posisi bab.',

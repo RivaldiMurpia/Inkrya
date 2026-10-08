@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {buildDoctorPackage,doctorCoverage,checkForgottenCharacters} from '../lib/doctor.ts';
 import {validateDoctorFindings} from '../lib/doctor-validation.ts';
 
@@ -8,28 +9,43 @@ import {validateDoctorFindings} from '../lib/doctor-validation.ts';
 function makeDbFixture(over={},rpcRows){
  const tables={
   chapters:[
-   {id:'ch-1',title:'Bab 1',position:0,story_time:'2048-03-01',plain_text:'Mira dan Vale menemukan sinyal Helios.'},
-   {id:'ch-2',title:'Bab 2',position:1,story_time:null,plain_text:'Mira menyusuri stasiun.'},
-   {id:'ch-3',title:'Bab 3',position:2,story_time:'2048-03-11',plain_text:'Vale meninggal. Mira menangis.'},
-   {id:'ch-4',title:'Bab 4',position:3,story_time:'2048-04-17',plain_text:'Arka muncul membawa kunci.'},
+   {id:'ch-1',title:'Bab 1',position:0,story_time:'2048-03-01',plain_text:'Mira dan Vale menemukan sinyal Helios.',revision_number:1},
+   {id:'ch-2',title:'Bab 2',position:1,story_time:null,plain_text:'Mira menyusuri stasiun.',revision_number:1},
+   {id:'ch-3',title:'Bab 3',position:2,story_time:'2048-03-11',plain_text:'Vale meninggal. Mira menangis.',revision_number:1},
+   {id:'ch-4',title:'Bab 4',position:3,story_time:'2048-04-17',plain_text:'Arka muncul membawa kunci.',revision_number:1},
   ],
   characters:[
-   {name:'Mira',aliases:[],role:'protagonist'},
-   {name:'Vale',aliases:['Dr. Vale'],role:'supporting'},
-   {name:'Arka',aliases:[],role:'protagonist'},
-   {name:'Leni',aliases:[],role:'supporting'},
+   {id:'char-1',name:'Mira',aliases:[],role:'protagonist'},
+   {id:'char-2',name:'Vale',aliases:['Dr. Vale'],role:'supporting'},
+   {id:'char-3',name:'Arka',aliases:[],role:'protagonist'},
+   {id:'char-4',name:'Leni',aliases:[],role:'supporting'},
   ],
   story_bibles:[{world_rules:'  Sinyal tidak melewati air.  '}],
   story_chunks:[
-   {id:'sc-1',chapter_id:'ch-1'},{id:'sc-2',chapter_id:'ch-2'},{id:'sc-3',chapter_id:'ch-3'},{id:'sc-4',chapter_id:'ch-4'},
+   {id:'sc-1',chapter_id:'ch-1',chunk_index:0,source_revision:1},
+   {id:'sc-2',chapter_id:'ch-2',chunk_index:0,source_revision:1},
+   {id:'sc-3',chapter_id:'ch-3',chunk_index:0,source_revision:1},
+   {id:'sc-4',chapter_id:'ch-4',chunk_index:0,source_revision:1},
   ],
-  memory_insights:[{chunk_id:'sc-1'},{chunk_id:'sc-3'},{chunk_id:'sc-4'}],
+  memory_jobs:[
+   {chapter_id:'ch-1',status:'ready'},{chapter_id:'ch-2',status:'ready'},
+   {chapter_id:'ch-3',status:'ready'},{chapter_id:'ch-4',status:'ready'},
+  ],
+  memory_insights:[
+   {chunk_id:'sc-1',summary:'Mira dan Vale menemukan sinyal.'},
+   {chunk_id:'sc-3',summary:'Vale meninggal.'},
+   {chunk_id:'sc-4',summary:'Arka datang membawa kunci.'},
+  ],
   ...over,
  };
  // The chain is thenable: every builder returns itself, and `await chain` resolves to the
  // table's rows. rpcRows (optional) replaces the two canon RPC answers.
  const events=rpcRows?rpcRows.events:[{id:'ev-1',title:'Kematian Vale',story_time:'2048-03-11'}];
  const knowledge=rpcRows?rpcRows.knowledge:[{id:'kn-1',character_name:'Mira',statement:'Mira mengetahui Helios'}];
+ // source_hash must equal md5(plain_text) for the chunk to count as current.
+ const hash=text=>createHash('md5').update(text).digest('hex');
+ const byId=Object.fromEntries(tables.chapters.map(c=>[c.id,c]));
+ for(const s of tables.story_chunks)if(!s.source_hash&&byId[s.chapter_id])s.source_hash=hash(byId[s.chapter_id].plain_text);
  return {
   from(table){
    const rows=tables[table]??[];

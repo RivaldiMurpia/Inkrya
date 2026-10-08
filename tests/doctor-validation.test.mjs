@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateDoctorFindings,evidenceLabels} from '../lib/doctor-validation.ts';
 
-/** @type {import('../lib/doctor.ts').DoctorPackage} */
 const pack={
  chapters:[
   {id:'ch-1',title:'Bab 1',position:0,story_time:'2048-03-01',ready:true,summarized:true,seenCharacters:['Mira','Vale']},
   {id:'ch-2',title:'Bab 2',position:1,story_time:null,ready:true,summarized:true,seenCharacters:['Mira']},
  ],
+ summaries:[{chunk_id:'chunk-1',chapter_id:'ch-1',title:'Bab 1',chunk_index:0,summary:'Mira menemukan sinyal.'}],
  facts:[{id:'fact-1',claim:'Vale meninggal 2048-03-11'}],
  events:[{id:'event-1',title:'Kematian Vale',story_time:'2048-03-11'}],
  knowledge:[{id:'know-1',character_name:'Mira',statement:'Mira mengetahui Helios'}],
@@ -62,6 +62,7 @@ test('a non-object or malformed body throws INVALID_DOCTOR',()=>{
 test('evidence labels cover every id type the model can cite',()=>{
  const labels=evidenceLabels(pack);
  assert.match(labels.get('ch-1'),/^Bab: Bab 1/);
+ assert.match(labels.get('chunk-1'),/^Ringkasan: Bab 1 · bagian 1/);
  assert.match(labels.get('fact-1'),/^Fakta: Vale meninggal/);
  assert.match(labels.get('event-1'),/^Peristiwa: Kematian Vale/);
  assert.match(labels.get('know-1'),/^Pengetahuan: Mira/);

@@ -1,7 +1,8 @@
 // Story Doctor output validation (Phase 6). Same fail-closed contract as the guardian/
 // canon validators: structure, enums and caps are enforced in code, and every finding must
-// cite at least one evidence id that resolves inside the doctor package — fabricated ids
-// drop the finding silently, so "evidence-backed" stays true in the UI.
+// cite at least one evidence id that resolves inside the doctor package (chapter, summary
+// chunk, fact, event or knowledge row) — fabricated ids drop the finding silently, so
+// "evidence-backed" stays true in the UI.
 import type {DoctorPackage} from './doctor.ts';
 
 export type DoctorKind='plot_hole'|'forgotten_character'|'timeline_conflict'|'knowledge_error'|'relationship_drift'|'world_rule_violation'|'pov_problem'|'unresolved_thread';
@@ -25,6 +26,7 @@ const text=(value:unknown,max:number):string|null=>typeof value==='string'&&valu
 export function evidenceLabels(pack:DoctorPackage):Map<string,string>{
  const labels=new Map<string,string>();
  for(const chapter of pack.chapters)labels.set(chapter.id,`Bab: ${chapter.title}`);
+ for(const summary of pack.summaries)labels.set(summary.chunk_id,`Ringkasan: ${summary.title} · bagian ${summary.chunk_index+1}`);
  for(const fact of pack.facts)labels.set(fact.id,`Fakta: ${fact.claim.slice(0,120)}`);
  for(const event of pack.events)labels.set(event.id,`Peristiwa: ${event.title} (${event.story_time})`);
  for(const knowledge of pack.knowledge)labels.set(knowledge.id,`Pengetahuan: ${knowledge.character_name} — ${knowledge.statement.slice(0,120)}`);
