@@ -2,6 +2,20 @@
 
 Do not paste keys into chat, source files, screenshots or public repository commits. Store them in Vercel project environment variables (start with Preview) and optionally a local ignored `.env.local`.
 
+## 0. Database migrations
+
+The live Inkrya project (`ecurjotykfqiejrpczdm`) already has every migration applied. For a FRESH database only, apply these as named Supabase migrations in order — never reapply on an existing project:
+
+1. `database/foundation.sql` — projects, chapters, versions, `create_story`, `save_chapter`.
+2. `database/krya.sql` — `ai_generations`, quota trigger.
+3. `database/story-planning.sql` — Characters, Story Bible, Outline, Notes.
+4. `database/memory.sql`, `database/memory-phase2.sql`, `database/memory-hybrid-retrieval.sql`, `database/memory-phase3.sql`, `database/memory-phase3-retrieval.sql` — chunks, insights, facts, embeddings, retrieval RPCs.
+5. `database/agent-writing.sql` — `ai_generations.action` gains `'write'`.
+6. `database/memory-phase5.sql` — `canon_proposals` + canon RPCs (`canon_update_phase5`).
+7. `database/doctor-phase6.sql` — `ai_generations.action` gains `'doctor'` (`doctor_action_phase6`).
+
+Steps 5 and 7 discover and replace the auto-named action CHECK constraint; on a fresh database run them in this order or the later one finds the constraint the earlier one already widened (idempotent outcome either way). Check RLS advisors after applying.
+
 ## 1. Obtain and configure credentials
 
 Required now: `NEBIUS_API_KEY`, `LANGSMITH_API_KEY`. Optional for organization-scoped LangSmith keys: `LANGSMITH_WORKSPACE_ID`. `TAVILY_API_KEY` is needed for Phase 7, not this release. No additional chat plugin is required to call these application APIs.

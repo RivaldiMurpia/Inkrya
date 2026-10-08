@@ -7,8 +7,8 @@ import {prepareAskContext,noEvidenceAnswer,answerAsk} from '@/lib/ask';
 import {createHash} from 'node:crypto';
 import {userDatabase} from '@/lib/server-auth';
 import {parseModelJSON,validateInsights,type MemorySource} from '@/lib/memory-validation';
-import {buildDoctorPackage,doctorCoverage,checkForgottenCharacters} from '@/lib/doctor';
-import {validateDoctorFindings,type DoctorDropStats} from '@/lib/doctor-validation';
+import {buildDoctorPackage,doctorCoverage,checkForgottenCharacters,type DoctorPackage} from '@/lib/doctor';
+import {validateDoctorFindings,evidenceLabels,dedupeFindings,type DoctorDropStats} from '@/lib/doctor-validation';
 import {DOCTOR_SYSTEM} from '@/lib/agent-prompts';
 export const maxDuration=60;
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
@@ -68,14 +68,31 @@ export async function POST(req:Request){
 // Story Doctor (Phase 6): whole-manuscript report. One run = one quota slot; the AI call is
 // bounded, fail-closed, and evidence ids must resolve — a fabricated finding never renders.
 async function doctor(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,projectId:string){
- let pack;
+ let pack:DoctorPackage;
  try{pack=await buildDoctorPackage(db,projectId)}catch{return Response.json({error:'Konteks Memory gagal dimuat.'},{status:503})}
+ // generateKryaText hard-fails above 48000 input chars, so trim summary bodies (the least
+ // dense payload) until system+prompt fit. Coverage is computed after the trim so the UI
+ // never overstates the basis the checks actually saw.
+ const systemLen=DOCTOR_SYSTEM.length;
+ const promptSize=(p:typeof pack)=>systemLen+JSON.stringify({
+  chapters:p.chapters.map(({id,title,position,story_time,ready,summarized})=>({id,title,position,story_time,ready,summarized})),
+  ringkasan_bab:p.summaries.map(s=>({id:s.chunk_id,bab:s.title,bagian:s.chunk_index+1,ringkasan:s.summary})),
+  facts:p.facts,events:p.events,knowledge:p.knowledge,characters:p.characters,world_rules:p.worldRules,
+ }).length;
+ if(promptSize(pack)>48000){
+  let cut=600;
+  while(cut>40){
+   const trimmed={...pack,summaries:pack.summaries.map(s=>({...s,summary:s.summary.slice(0,cut)}))};
+   if(promptSize(trimmed)<=48000){pack=trimmed;break}
+   cut=Math.floor(cut/2);
+  }
+ }
  const coverage=doctorCoverage(pack);
- // Deterministic engine first — free, auditable, no model involved.
+ // Deterministic engine — free, auditable, no model involved.
  const codeFindings=checkForgottenCharacters(pack).map(f=>({
   engine:'code' as const,kind:f.kind,severity:f.severity,claim:f.claim,explanation:f.explanation,
   evidence_ids:f.evidence_ids,chapter_id:f.chapter_id,
-  resolvedEvidence:f.evidence_ids.map(id=>({id,label:pack.chapters.some(c=>c.id===id)?`Bab: ${pack.chapters.find(c=>c.id===id)!.title}`:id})),
+  resolvedEvidence:f.evidence_ids.map(id=>({id,label:evidenceLabels(pack).get(id)??id})),
  }));
  let aiFindings:ReturnType<typeof validateDoctorFindings>=[];
  if(!pack.chapters.length)return Response.json({coverage,findings:codeFindings,aiAvailable:false,warning:null});
@@ -83,18 +100,17 @@ async function doctor(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,p
  const {data:run,error}=await db.from('ai_generations').insert({project_id:projectId,action:'doctor',model:prepared.config.provider+':'+prepared.config.id,prompt:`[Story Doctor] Analisis manuskrip`}).select('id').single();
  if(error)return Response.json({error:error.message.includes('AI_DAILY_LIMIT')?'Batas 20 permintaan AI dalam 24 jam tercapai.':error.message.includes('AI_RATE_LIMIT')?'Tunggu 10 detik sebelum permintaan AI berikutnya.':'Riwayat AI gagal disiapkan.'},{status:429});
  try{
-  const evidencePackage={
+  const result=await generateKryaText(prepared,{maxOutputTokens:1800,timeoutMs:35000,system:DOCTOR_SYSTEM,prompt:JSON.stringify({
    chapters:pack.chapters.map(({id,title,position,story_time,ready,summarized})=>({id,title,position,story_time,ready,summarized})),
    // Summaries are the AI engine's prose basis: current-chunk AI summaries in reading order,
-   // citable as evidence ids just like canon rows.
-   ringkasan_bab:pack.summaries.sort((a,b)=>a.title.localeCompare(b.title,undefined,{numeric:true})||a.chunk_index-b.chunk_index).map(s=>({id:s.chunk_id,bab:s.title,bagian:s.chunk_index+1,ringkasan:s.summary})),
+   // citable as evidence ids just like canon rows (builder already sorts by position).
+   ringkasan_bab:pack.summaries.map(s=>({id:s.chunk_id,bab:s.title,bagian:s.chunk_index+1,ringkasan:s.summary})),
    facts:pack.facts,events:pack.events,knowledge:pack.knowledge,characters:pack.characters,
    world_rules:pack.worldRules,
    pengingat:'Urutan bab TIDAK sama dengan urutan waktu. Nilai konflik pada story_time, bukan posisi bab.',
-  };
-  const result=await generateKryaText(prepared,{maxOutputTokens:1800,timeoutMs:35000,system:DOCTOR_SYSTEM,prompt:JSON.stringify(evidencePackage)},{generationId:run.id,projectId,userId:db.authenticatedUserId,sourceCount:pack.chapters.length,workflow:'story-doctor'});
+  })},{generationId:run.id,projectId,userId:db.authenticatedUserId,sourceCount:pack.chapters.length,workflow:'story-doctor'});
   const drops:DoctorDropStats={proposed:0,kept:0,badShape:0,badEnum:0,badText:0,noEvidence:0};
-  aiFindings=validateDoctorFindings(parseModelJSON(result.text),pack,drops);
+  aiFindings=dedupeFindings(validateDoctorFindings(parseModelJSON(result.text),pack,drops));
   // Counts only in logs — never model prose (same rule as generateKryaText).
   if(!aiFindings.length&&drops.proposed)console.error('story-doctor','FINDINGS_ALL_DROPPED',JSON.stringify(drops));
   const findings=[...aiFindings.map(f=>({...f,engine:'ai' as const})),...codeFindings];

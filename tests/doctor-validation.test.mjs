@@ -55,6 +55,13 @@ test('overlong fields and the 8-item cap are enforced',()=>{
  const flood=Array.from({length:12},(_,i)=>finding({claim:`temuan ${i}`,evidence_ids:['ch-1']}));
  assert.equal(validateDoctorFindings(wrap(flood),pack).length,8);
 });
+test('malformed items do not consume kept slots — filter first, cap last',()=>{
+ const junk=[finding({claim:''}),finding({evidence_ids:['nope']}),finding({kind:'x'})];
+ const good=Array.from({length:9},(_,i)=>finding({claim:`temuan bagus ${i}`,evidence_ids:['ch-1']}));
+ const kept=validateDoctorFindings(wrap([...junk,...good]),pack);
+ assert.equal(kept.length,8);
+ assert.equal(kept[0].claim,'temuan bagus 0');
+});
 test('a non-object or malformed body throws INVALID_DOCTOR',()=>{
  assert.throws(()=>validateDoctorFindings(null,pack),/INVALID_DOCTOR/);
  assert.throws(()=>validateDoctorFindings({findings:'banyak'},pack),/INVALID_DOCTOR/);
@@ -63,6 +70,11 @@ test('drop stats explain why a report came back empty — counts only, never tex
  const stats={proposed:0,kept:0,badShape:0,badEnum:0,badText:0,noEvidence:0};
  validateDoctorFindings(wrap([finding(),finding({evidence_ids:['nope']}),finding({kind:'vibes'}),finding({claim:''})]),pack,stats);
  assert.deepEqual(stats,{proposed:4,kept:1,badShape:0,badEnum:1,badText:1,noEvidence:1});
+});
+test('duplicate evidence ids dedupe and a chapter_id that names a non-chapter row is nulled',()=>{
+ const [out]=validateDoctorFindings(wrap([finding({evidence_ids:['know-1','know-1','nope'],chapter_id:'know-1'})]),pack);
+ assert.deepEqual(out.evidence_ids,['know-1']);
+ assert.equal(out.chapter_id,null);
 });
 test('evidence labels cover every id type the model can cite',()=>{
  const labels=evidenceLabels(pack);

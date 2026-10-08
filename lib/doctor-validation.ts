@@ -42,8 +42,11 @@ export function validateDoctorFindings(value:unknown,pack:DoctorPackage,stats?:D
  const x=value as {findings?:unknown}|null;
  if(!x||typeof x!=='object'||!Array.isArray(x.findings)||x.findings.length>12)throw Error('INVALID_DOCTOR');
  const labels=evidenceLabels(pack);
+ // chapter_id is a UI link and must resolve to a chapter, not any evidence row.
+ const chapterIds=new Set(pack.chapters.map(c=>c.id));
  if(stats){stats.proposed=x.findings.length;stats.kept=0;stats.badShape=0;stats.badEnum=0;stats.badText=0;stats.noEvidence=0;}
- const kept=x.findings.slice(0,8).flatMap(raw=>{
+ // Filter first, cap last: a malformed item must not consume one of the 8 kept slots.
+ const valid=x.findings.flatMap(raw=>{
   const f=raw as Record<string,unknown>|null;
   if(!f||typeof f!=='object'){if(stats)stats.badShape++;return []}
   const kind=typeof f.kind==='string'&&(KINDS as readonly string[]).includes(f.kind)?f.kind as DoctorKind:null;
@@ -52,15 +55,25 @@ export function validateDoctorFindings(value:unknown,pack:DoctorPackage,stats?:D
   const claim=text(f.claim,500);
   const explanation=text(f.explanation,800);
   if(!claim||!explanation){if(stats)stats.badText++;return []}
-  const ids=Array.isArray(f.evidence_ids)?f.evidence_ids.filter((id):id is string=>typeof id==='string'&&labels.has(id)):[];
+  const ids=Array.isArray(f.evidence_ids)
+   ?[...new Set(f.evidence_ids.filter((id):id is string=>typeof id==='string'&&labels.has(id)))]
+   :[];
   // Anti-fabrication floor: no real evidence id, no finding.
   if(!ids.length){if(stats)stats.noEvidence++;return []}
-  // chapter_id is a UI link, not evidence: an unresolvable one is nulled, the finding stays.
+  // An unresolvable chapter_id is nulled, the finding stays.
   const chapterId=text(f.chapter_id,100);
-  const resolvedChapter=chapterId&&labels.has(chapterId)?chapterId:null;
+  const resolvedChapter=chapterId&&chapterIds.has(chapterId)?chapterId:null;
   return [{kind,severity,claim,explanation,evidence_ids:ids,chapter_id:resolvedChapter,
    resolvedEvidence:ids.map(id=>({id,label:labels.get(id)!}))}];
  });
+ const kept=valid.slice(0,8);
  if(stats)stats.kept=kept.length;
  return kept;
+}
+
+// One dedupe pass so the same (kind, claim) from the model never renders twice or collides
+// in React keys. First occurrence wins; later duplicates are not counted as kept.
+export function dedupeFindings(findings:DoctorFinding[]):DoctorFinding[]{
+ const seen=new Set<string>();
+ return findings.filter(f=>{const key=f.kind+':'+f.claim.toLocaleLowerCase();if(seen.has(key))return false;seen.add(key);return true});
 }

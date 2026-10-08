@@ -91,6 +91,42 @@ test('world rules whitespace is trimmed',async()=>{
  const pack=await buildDoctorPackage(makeDbFixture(),'p1');
  assert.equal(pack.worldRules,'Sinyal tidak melewati air.');
 });
+test('stale summaries are excluded — a summary on an old revision never reaches the package',async()=>{
+ const {createHash:hash}=await import('node:crypto');
+ const h=t=>hash('md5').update(t).digest('hex');
+ // Chapter revised to v2; the insight is bound to a v1 chunk. The insight must be ignored
+ // and the chapter must NOT count as summarized, even though a memory job is ready.
+ const chapters=[{id:'ch-1',title:'Bab 1',position:0,story_time:null,plain_text:'Teks revisi kedua.',revision_number:2}];
+ const db2=makeDbFixture({
+  chapters,
+  story_chunks:[
+   {id:'old-chunk',chapter_id:'ch-1',chunk_index:0,source_revision:1,source_hash:'stale'},
+   {id:'new-chunk',chapter_id:'ch-1',chunk_index:0,source_revision:2,source_hash:h('Teks revisi kedua.')},
+  ],
+  memory_jobs:[{chapter_id:'ch-1',status:'ready'}],
+  memory_insights:[{chunk_id:'old-chunk',summary:'Ringkasan basi.'}],
+ });
+ const pack=await buildDoctorPackage(db2,'p1');
+ assert.deepEqual(pack.summaries,[]);
+ assert.equal(pack.chapters[0].summarized,false);
+ // And its summary-based coverage line reports the basis honestly.
+ const cov=doctorCoverage(pack);
+ assert.equal(cov.chaptersSummarized,0);
+ assert.ok(cov.skipped.some(s=>s.includes('ringkasan')));
+});
+test('stale summaries are excluded — a summary on an old hash (same revision) is excluded too',async()=>{
+ const {createHash:hash}=await import('node:crypto');
+ const h=t=>hash('md5').update(t).digest('hex');
+ const chapters=[{id:'ch-1',title:'Bab 1',position:0,story_time:null,plain_text:'Teks terkini.',revision_number:1}];
+ const db2=makeDbFixture({
+  chapters,
+  story_chunks:[{id:'c1',chapter_id:'ch-1',chunk_index:0,source_revision:1,source_hash:h('Teks terkini.')},{id:'c1-old',chapter_id:'ch-1',chunk_index:0,source_revision:1,source_hash:'x'.repeat(32)}],
+  memory_jobs:[{chapter_id:'ch-1',status:'ready'}],
+  memory_insights:[{chunk_id:'c1-old',summary:'Basi.'},{chunk_id:'c1',summary:'Terkini.'}],
+ });
+ const pack=await buildDoctorPackage(db2,'p1');
+ assert.deepEqual(pack.summaries.map(s=>s.chunk_id),['c1']);
+});
 test('deterministic last-seen scan powers the forgotten-character check',async()=>{
  const pack=await buildDoctorPackage(emptyFactsDb(),'p1');
  // last appearances: Mira ch-3, Vale ch-3, Arka ch-4. Leni never appears.

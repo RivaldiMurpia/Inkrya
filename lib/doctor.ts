@@ -8,7 +8,7 @@ import type {StoryDatabase} from './story-context.ts';
 export type DoctorChapter={id:string;title:string;position:number;story_time:string|null;ready:boolean;summarized:boolean;seenCharacters:string[]};
 // Per-chunk AI summary of a CURRENT chunk. This is the AI engine's prose basis — without it
 // the model can only see titles and canon rows and has nothing narrative to cite.
-export type DoctorSummary={chunk_id:string;chapter_id:string;title:string;chunk_index:number;summary:string};
+export type DoctorSummary={chunk_id:string;chapter_id:string;title:string;chunk_index:number;position:number;summary:string};
 export type DoctorPackage={
  chapters:DoctorChapter[];
  summaries:DoctorSummary[];
@@ -34,24 +34,23 @@ export type Coverage={
 // owner-RLS-scoped and the corpus stays demo-sized (≤10 chapters).
 export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Promise<DoctorPackage>{
  const [chaptersResult,charsResult,bibleResult]=await Promise.all([
-  db.from('chapters').select('id,title,position,story_time,plain_text').eq('project_id',projectId).order('position'),
+  db.from('chapters').select('id,title,position,story_time,plain_text,revision_number').eq('project_id',projectId).order('position'),
   db.from('characters').select('id,name,aliases,role').eq('project_id',projectId).eq('include_in_ai_context',true).is('deleted_at',null).limit(100),
   db.from('story_bibles').select('world_rules').eq('project_id',projectId).maybeSingle(),
  ]);
  if(chaptersResult.error||charsResult.error||bibleResult.error)throw Error('CONTEXT_READ_FAILED');
- const chapters=(chaptersResult.data??[]) as {id:string;title:string;position:number;story_time:string|null;plain_text:string}[];
+ const chapters=(chaptersResult.data??[]) as {id:string;title:string;position:number;story_time:string|null;plain_text:string;revision_number:number}[];
 
  // Retrieval-safe + analyzed flags per chapter, exactly the gates the QA path trusts:
- // ready = chunks exist for the CURRENT revision+hash AND the memory job is ready.
+ // ready = chunks exist for the CURRENT revision+hash AND the memory job is ready. The chapter
+ // rows already carry revision_number + plain_text, so no second chapters read is needed.
  const [readyResult,jobResult]=await Promise.all([
-  db.from('story_chunks').select('chapter_id,source_revision,source_hash').eq('project_id',projectId),
+  db.from('story_chunks').select('chapter_id,source_revision,source_hash,id,chunk_index').eq('project_id',projectId),
   db.from('memory_jobs').select('chapter_id,status').eq('project_id',projectId),
  ]);
  if(readyResult.error||jobResult.error)throw Error('CONTEXT_READ_FAILED');
  const readyJobs=new Set((jobResult.data??[]).filter((j:{status:string})=>j.status==='ready').map((j:{chapter_id:string})=>j.chapter_id));
- const {data:chapterHashes,error:chapterHashError}=await db.from('chapters').select('id,revision_number,plain_text').eq('project_id',projectId);
- if(chapterHashError)throw Error('CONTEXT_READ_FAILED');
- const hashOf=new Map((chapterHashes??[]).map((c:{id:string;revision_number:number;plain_text:string})=>[c.id,{rev:c.revision_number,hash:createHash('md5').update(c.plain_text).digest('hex')}]));
+ const hashOf=new Map(chapters.map(c=>[c.id,{rev:c.revision_number,hash:createHash('md5').update(c.plain_text).digest('hex')}]));
  const currentChunks=(readyResult.data??[]).filter((s:{chapter_id:string;source_revision:number;source_hash:string})=>{
   const meta=hashOf.get(s.chapter_id);return !!meta&&meta.rev===s.source_revision&&meta.hash===s.source_hash;
  });
@@ -60,18 +59,15 @@ export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Prom
  // AI summaries joined to their CURRENT chunks only — stale summaries never reach the model.
  const insResult=await db.from('memory_insights').select('chunk_id,summary').eq('project_id',projectId);
  if(insResult.error)throw Error('CONTEXT_READ_FAILED');
- const {data:chunkRows,error:chunkRowError}=await db.from('story_chunks').select('id,chapter_id,source_revision,source_hash,chunk_index').eq('project_id',projectId);
- if(chunkRowError)throw Error('CONTEXT_READ_FAILED');
- const currentChunkRows=(chunkRows??[]).filter((s:{chapter_id:string;source_revision:number;source_hash:string})=>{
-  const meta=hashOf.get(s.chapter_id);return !!meta&&meta.rev===s.source_revision&&meta.hash===s.source_hash;
- });
- const chunkMeta=new Map(currentChunkRows.map((s:{id:string;chapter_id:string;chunk_index:number})=>[s.id,{chapter_id:s.chapter_id,chunk_index:s.chunk_index}]));
+ const chunkMeta=new Map(currentChunks.map((s:{id:string;chapter_id:string;chunk_index:number})=>[s.id,{chapter_id:s.chapter_id,chunk_index:s.chunk_index}]));
+ const chapterOrder=new Map(chapters.map((c,index)=>[c.id,index]));
  const chapterTitle=new Map(chapters.map(c=>[c.id,c.title]));
+ // Reading order (chapter position, then chunk index) — never title order.
  const summaries:DoctorSummary[]=(insResult.data??[]).flatMap((i:{chunk_id:string;summary:string})=>{
   const meta=chunkMeta.get(i.chunk_id);
   if(!meta)return [];
-  return [{chunk_id:i.chunk_id,chapter_id:meta.chapter_id,title:chapterTitle.get(meta.chapter_id)??'',chunk_index:meta.chunk_index,summary:i.summary}];
- });
+  return [{chunk_id:i.chunk_id,chapter_id:meta.chapter_id,title:chapterTitle.get(meta.chapter_id)??'',chunk_index:meta.chunk_index,position:chapterOrder.get(meta.chapter_id)??0,summary:i.summary}];
+ }).sort((a,b)=>a.position-b.position||a.chunk_index-b.chunk_index);
  // Canonical canon rows only (status gates mirror current_timeline_events/current_character_knowledge).
  // current_character_knowledge returns nothing without character ids, so the tracked cast ids pass in.
  const castRows=(charsResult.data??[]) as {id:string;name:string;aliases:string[];role:string}[];
@@ -83,13 +79,23 @@ export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Prom
  if(factsResult.error||eventsResult.error||knowledgeResult.error)throw Error('CONTEXT_READ_FAILED');
 
  // Deterministic last-seen scan: the reading-order position of the last chapter whose
- // plain_text mentions the character's name or an alias (case-insensitive).
+ // plain_text mentions the character's name or an alias (case-insensitive, whole word — a
+ // bare substring would count "Ali" inside "malam" or a place name as an appearance).
  const cast=castRows;
  const doctorChapters:DoctorChapter[]=chapters.map((chapter,index)=>{
   const lower=chapter.plain_text.toLocaleLowerCase();
   const seenCharacters=cast
    .filter(character=>[character.name,...(character.aliases??[])]
-    .some(alias=>alias.toLocaleLowerCase().length>1&&lower.includes(alias.toLocaleLowerCase())))
+    .some(alias=>{
+     const needle=alias.toLocaleLowerCase();
+     if(needle.length<=1)return false;
+     const at=lower.indexOf(needle);
+     if(at<0)return false;
+     const word=/[\p{L}\p{N}]/u;
+     const before=at>0?lower[at-1]:'';
+     const after=lower[at+needle.length]??'';
+     return !word.test(before)&&!word.test(after);
+    }))
    .map(character=>character.name);
   return {
    id:chapter.id,title:chapter.title,position:index,story_time:chapter.story_time,
@@ -103,7 +109,8 @@ export async function buildDoctorPackage(db:StoryDatabase,projectId:string):Prom
   facts:(factsResult.data??[]).map((f:{id:string;claim:string})=>({id:f.id,claim:f.claim})),
   events:(eventsResult.data??[]).map((e:{id:string;title:string;story_time:string})=>({id:e.id,title:e.title,story_time:e.story_time})),
   knowledge:(knowledgeResult.data??[]).map((k:{id:string;character_name:string;statement:string})=>({id:k.id,character_name:k.character_name,statement:k.statement})),
-  characters:cast.map(({name,aliases,role})=>({name,aliases:aliases??[],role})),  worldRules:bibleResult.data?.world_rules?.trim()||null,
+  characters:cast.map(({name,aliases,role})=>({name,aliases:aliases??[],role})),
+  worldRules:bibleResult.data?.world_rules?.trim()||null,
  };
 }
 
