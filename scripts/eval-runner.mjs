@@ -126,34 +126,48 @@ async function baselineWrite(item){
  return {kind:'write',findings,repairAttempts:0,unresolved:findings.length,draft};
 }
 
+let nebius=null;
 async function loadNebius(){
  const {generateText}=await import('ai');
  const {createOpenAICompatible}=await import('@ai-sdk/openai-compatible');
  const {NEBIUS_BASE_URL,resolveModelConfig}=await import('../lib/ai/models.ts');
  const key=process.env.NEBIUS_API_KEY;
  assert.ok(key,'NEBIUS_API_KEY is required for the baseline arm');
+ const config=resolveModelConfig('writer',{...process.env});
  const provider=createOpenAICompatible({name:'nebius',baseURL:NEBIUS_BASE_URL,apiKey:key});
- const model=provider.chatModel(resolveModelConfig('writer',{...process.env}).id);
- return {generateText,model};
+ // Mirror lib/ai/generate.ts: Super defaults to a reasoning template, so without this switch
+ // it spends the whole budget on the reasoning channel and returns EMPTY text. The baseline
+ // arm must reproduce that switch or every call fails — this was the run-3 baseline bug.
+ const options=config.id==='nvidia/nemotron-3-super-120b-a12b'
+  ?{providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}},temperature:1,topP:0.95}
+  :config.id==='nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B'
+   ?{providerOptions:{nebius:{chat_template_kwargs:{enable_thinking:false}}}}
+   :{};
+ return {generateText,model:provider.chatModel(config.id),options,modelId:config.id};
 }
 
-let nebius=null;
-async function baselineCall(prompt,system){
+async function baselineCall(prompt,system,maxOutputTokens=700){
  nebius??=await loadNebius();
- const result=await nebius.generateText({model:nebius.model,system,prompt,maxOutputTokens:700,maxRetries:0,abortSignal:AbortSignal.timeout(35000)});
- return result.text.trim();
+ const result=await nebius.generateText({
+  model:nebius.model,system,prompt,maxOutputTokens,maxRetries:0,
+  abortSignal:AbortSignal.timeout(35000),...nebius.options,
+ });
+ const text=result.text.trim();
+ // An empty text channel is a failure, not an empty answer — surface it instead of scoring
+ // a blank draft as "the baseline found nothing wrong".
+ if(!text)throw Error('BASELINE_EMPTY');
+ return text;
 }
 
 // The pipeline's guardian, invoked standalone for baseline drafts. Same prompt, same
 // validator, same context package — the identical detector.
 async function guardianCall(instruction,draft){
- nebius??=await loadNebius();
  const {GUARDIAN_SYSTEM}=await import('../lib/agent-prompts.ts');
  const {validateGuardianIssues,parseModelJSON}=await import('../lib/agent-validation.ts');
  const context=JSON.parse(readFileSync(join(root,'qa','eval','guardian-context.json'),'utf8'));
  const prompt=JSON.stringify({instruction,scene_story_time:null,draft,evidence:context});
  try{
-  const text=await baselineCall(prompt,GUARDIAN_SYSTEM);
+  const text=await baselineCall(prompt,GUARDIAN_SYSTEM,700);
   return validateGuardianIssues(parseModelJSON(text),context);
  }catch{return null}
 }
