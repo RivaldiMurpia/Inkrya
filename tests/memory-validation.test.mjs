@@ -21,11 +21,36 @@ assert.equal(contra.status,'CONTRADICTION');
 // Unknown status with no claims downgrades to NOT_ESTABLISHED (never ANSWERED)
 assert.equal(validateAnswer({claims:[],status:'UNKNOWN'},[source]).status,'NOT_ESTABLISHED');
 
-// Throws on bad source_id, bad quote (not substring), too many claims, malformed
-assert.throws(()=>validateAnswer({claims:[{text:'ok',source_id:'s2',quote:'kantor BUMN di Duri'}]},[source]));
-assert.throws(()=>validateAnswer({claims:[{text:'ok',source_id:'s1',quote:'kata tidak ada'}]},[source]));
+// Structural problems still throw: a malformed body is not a partial answer.
 assert.throws(()=>validateAnswer({claims:Array(7).fill({text:'x',source_id:'s1',quote:'Aurel'})},[source]));
-assert.throws(()=>validateAnswer({claims:[{text:'No source'}]},[source]));
+assert.throws(()=>validateAnswer(null,[source]));
+// A claim missing its quote is malformed and dropped; with nothing left the answer abstains
+// (still never throws — one junk claim must not cost the whole response).
+assert.equal(validateAnswer({claims:[{text:'No source'}]},[source]).status,'NOT_ESTABLISHED');
+
+// Phase 8 finding: ONE paraphrased quote used to throw away the WHOLE answer, 503ing the ask
+// deterministically. A quote that is not an exact substring is now re-anchored to the real
+// span in its source, so the claim survives with a truthful quote; a claim whose source_id
+// does not resolve is dropped instead of discarding every sibling claim.
+const reanchored=validateAnswer({claims:[
+ {text:'Aurel bekerja di kantor BUMN.',source_id:'s1',quote:'Aurel bekerja di kantor BUMN di Duri ini hari'},
+],status:'ANSWERED'},[source]);
+assert.equal(reanchored.status,'ANSWERED');
+assert.equal(reanchored.claims.length,1);
+assert.ok(source.content.includes(reanchored.claims[0].quote),'re-anchored quote must be a real substring');
+
+const dropped=validateAnswer({claims:[
+ {text:'Klaim tanpa sumber.',source_id:'s-nonexistent',quote:'Aurel bekerja'},
+ {text:'Aurel bekerja di Duri.',source_id:'s1',quote:'kantor BUMN di Duri'},
+],status:'ANSWERED'},[source]);
+assert.equal(dropped.claims.length,1); // the bad claim is dropped…
+assert.equal(dropped.status,'ANSWERED'); // …and the good one still answers.
+// Every claim unsupported → honest abstention, never invented support.
+const allBad=validateAnswer({claims:[
+ {text:'x',source_id:'s1',quote:'sekali lagi tidak ada sama sekali di sumber ini'},
+],status:'ANSWERED'},[source]);
+assert.equal(allBad.status,'NOT_ESTABLISHED');
+assert.equal(allBad.claims.length,0);
 
 // parseModelJSON strips markdown fences
 assert.equal(parseModelJSON('```json\n{"claims":[]}\n```').claims.length,0);

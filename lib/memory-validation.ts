@@ -35,14 +35,41 @@ const STATUS_VALUES:AnswerStatus[]=['ANSWERED','NOT_ESTABLISHED','NO_EVIDENCE','
 
 // Contract: ANSWERED requires ≥1 supported claim; any other status returns [] claims.
 // A model that claims ANSWERED but supplies no valid claims is downgraded to NOT_ESTABLISHED.
+//
+// Per-claim failure policy (Phase 8 finding): the model occasionally paraphrases its own
+// quote, and ONE such claim used to throw UNSUPPORTED_CITATION, discarding the whole answer
+// server-side (a deterministic 503). Now a paraphrased quote is re-anchored to the real span
+// in its source — the rendered citation stays truthful because the quote is replaced by an
+// exact substring — and only a claim with no anchor at all is dropped. Structural garbage
+// (wrong shape, >6 claims) still throws: that is not a partial answer.
+function reAnchor(quote:string,content:string):string|null{
+ // Longest window of the quote that is still an exact substring, shrunk from the end first
+ // then the start — cheap (no alignment tables) and sufficient for a one-word paraphrase.
+ if(content.includes(quote))return quote;
+ for(let end=quote.length;end>=20;end--){
+  const head=quote.slice(0,end);
+  if(content.includes(head))return head;
+ }
+ for(let start=0;start<=quote.length-20;start++){
+  const tail=quote.slice(start);
+  if(content.includes(tail))return tail;
+ }
+ return null;
+}
+
 export function validateAnswer(value:unknown,sources:MemorySource[]):{claims:ValidatedClaim[];status:AnswerStatus}{
  const x=value as {claims?:{text?:unknown;source_id?:unknown;quote?:unknown}[];status?:unknown};
- if(!x||!Array.isArray(x.claims)||x.claims.length>6)throw Error('INVALID_ANSWER');
- const raw=x.claims.map(c=>{
+ if(!x||typeof x!=='object'||!Array.isArray(x.claims)||x.claims.length>6)throw Error('INVALID_ANSWER');
+ const raw:ValidatedClaim[]=[];
+ for(const c of x.claims){
+  if(typeof c!=='object'||c===null)continue;
   const source=sources.find(s=>s.id===c.source_id);
-  if(typeof c.text!=='string'||!c.text.trim()||c.text.length>1200||typeof c.quote!=='string'||c.quote.length<5||c.quote.length>1000||!source||!source.content.includes(c.quote))throw Error('UNSUPPORTED_CITATION');
-  return {text:c.text,quote:c.quote,source};
- });
+  if(typeof c.text!=='string'||!c.text.trim()||c.text.length>1200||typeof c.quote!=='string'||c.quote.length<5||c.quote.length>1000||!source)continue;
+  if(source.content.includes(c.quote)){raw.push({text:c.text,quote:c.quote,source});continue}
+  // Paraphrase: re-anchor to the real span. No anchor → the claim is dropped, not fatal.
+  const anchored=reAnchor(c.quote,source.content);
+  if(anchored)raw.push({text:c.text,quote:anchored,source});
+ }
  const requested=typeof x.status==='string'&&(STATUS_VALUES as string[]).includes(x.status)?x.status as AnswerStatus:'ANSWERED';
  if(!raw.length)return {claims:[],status:requested==='ANSWERED'?'NOT_ESTABLISHED':requested};
  if(requested!=='ANSWERED'&&requested!=='CONTRADICTION')return {claims:[],status:requested};
