@@ -9,6 +9,7 @@ import type {TavilyResult} from './tavily.ts';
 export const MAX_QUERIES=3;
 const QUERY_MAX_LENGTH=200;
 const URL_MAX_LENGTH=500;
+const TITLE_MAX=200;
 const MAX_NOTES=6;
 const HEADING_MAX=100;
 const BODY_MAX=700;
@@ -50,7 +51,10 @@ export function dedupeSources(batches:TavilyResult[][]):ResearchSource[]{
  for(const batch of batches)for(const result of batch){
   if(!usableUrl(result.url)||seen.has(result.url))continue;
   seen.add(result.url);
-  out.push({index:out.length+1,title:result.title,url:result.url,content:result.content});
+  // Titles are capped too: Tavily returns the page's own <title>, and a pathological one
+  // would otherwise ride into the notes prompt and push it past the 48k ceiling only after
+  // every search has already been paid for.
+  out.push({index:out.length+1,title:result.title.slice(0,TITLE_MAX),url:result.url,content:result.content});
  }
  return out;
 }
@@ -65,7 +69,9 @@ export function validateResearchNotes(value:unknown,sources:ResearchSource[],sta
  const indices=new Set(sources.map(s=>s.index));
  // proposed counts everything the model emitted; the cap applies to kept notes only.
  drop.notesProposed+=x.notes.length;
- const notes=x.notes.slice(0,MAX_NOTES).flatMap((raw:unknown)=>{
+ // Filter first, cap last — a malformed early entry must not consume one of the six kept
+ // slots (the same defect class the Phase 6 doctor validator was fixed for).
+ const validated=x.notes.flatMap((raw:unknown)=>{
   const n=raw as Record<string,unknown>|null;
   if(!n||typeof n!=='object')return (drop.badShape++,[]);
   // A missing/blank field is a shape defect; a present-but-overlong one is a text defect.
@@ -80,6 +86,8 @@ export function validateResearchNotes(value:unknown,sources:ResearchSource[],sta
   drop.notesKept++;
   return [{heading,body,citations}];
  });
+ const notes=validated.slice(0,MAX_NOTES);
+ drop.notesKept=Math.min(drop.notesKept,MAX_NOTES);
  return {
   summary:typeof x.summary==='string'?x.summary.slice(0,1000):'',
   notes,

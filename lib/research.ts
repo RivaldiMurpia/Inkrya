@@ -3,6 +3,7 @@
 // sources it received. Credits are recorded as they are spent, so a mid-run failure still
 // meters what was used. Nothing here touches story canon — the notes live in the caller's
 // ai_generations.result and nowhere else.
+import {randomUUID} from 'node:crypto';
 import {searchTavily,TAVILY_COST_PER_SEARCH,MAX_RESULTS_PER_QUERY,type TavilyResult} from './tavily.ts';
 import {RESEARCH_QUERY_SYSTEM,RESEARCH_NOTES_SYSTEM} from './agent-prompts.ts';
 import {validateResearchQueries,dedupeSources,validateResearchNotes,MAX_QUERIES,type ResearchQuery,type ResearchSource,type ResearchNotes,type ResearchDropStats} from './research-validation.ts';
@@ -33,7 +34,9 @@ export async function runResearch(input:{
   const result=await generateKryaText(
    input.prepared as Parameters<typeof generateKryaText>[0],
    {system,prompt,maxOutputTokens,timeoutMs:maxOutputTokens>1000?35000:25000,signal:input.signal},
-   {generationId:input.generationId,projectId:input.projectId,userId:input.userId,sourceCount:0,workflow:'research-agent'},
+   // A per-call trace UUID: reusing the run id would make the second createRun a duplicate
+   // that LangSmith rejects, silently losing the notes call's trace (agent-graph does the same).
+   {generationId:randomUUID(),projectId:input.projectId,userId:input.userId,sourceCount:0,workflow:'research-agent'},
   );
   return {text:result.text,usage:{inputTokens:result.usage?.inputTokens,outputTokens:result.usage?.outputTokens}};
  });

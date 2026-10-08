@@ -31,16 +31,20 @@ begin
   select 1 from public.projects p
   where p.id = p_project_id and p.owner_id = auth.uid()
  ) then raise exception 'FORBIDDEN';end if;
+ -- Two INDEPENDENT sums: sharing one OR'd WHERE (the first version) made user_credits_24h
+ -- return the global month total, locking every user out once ~daily-cap credits had been
+ -- spent by anyone this month, while the global ceiling silently never fired.
  return query
  select
-  coalesce(sum((g.token_usage->>'tavily_credits')::bigint),0)::bigint,
-  coalesce(sum((g.token_usage->>'tavily_credits')::bigint),0)::bigint
- from public.ai_generations g
- where g.action = 'research'
-  and (
-   (g.user_id = auth.uid() and g.created_at > now() - interval '24 hours')
-   or g.created_at >= date_trunc('month', now())
-  );
+  (select coalesce(sum((g.token_usage->>'tavily_credits')::bigint),0)::bigint
+   from public.ai_generations g
+   where g.action = 'research'
+    and g.user_id = auth.uid()
+    and g.created_at > now() - interval '24 hours'),
+  (select coalesce(sum((g.token_usage->>'tavily_credits')::bigint),0)::bigint
+   from public.ai_generations g
+   where g.action = 'research'
+    and g.created_at >= date_trunc('month', now()));
 end $$;
 revoke execute on function public.research_credit_usage(uuid) from anon, public;
 grant execute on function public.research_credit_usage(uuid) to authenticated;

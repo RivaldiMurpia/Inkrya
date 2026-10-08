@@ -111,6 +111,20 @@ test('an empty-by-design answer is valid and returns zero notes without throwing
  assert.deepEqual(out.unanswered,['iklim']);
 });
 
+
+test('valid notes past the cap are not consumed by malformed entries — filter first, cap last',()=>{
+ const stats={notesProposed:0,notesKept:0,badShape:0,badText:0,noCitation:0,badUrl:0};
+ const src=[source()];
+ const junk=Array.from({length:6},()=>({body:'tanpa heading',citations:[1]}));
+ const good=[{heading:'Baik 1',body:'Fakta.',citations:[1]},{heading:'Baik 2',body:'Fakta lain.',citations:[1]}];
+ const out=validateResearchNotes({summary:'S.',notes:[...junk,...good],unanswered:[]},src,stats);
+ assert.deepEqual(out.notes.map(n=>n.heading),['Baik 1','Baik 2']);
+ assert.equal(stats.notesProposed,8);
+ assert.equal(stats.notesKept,2);
+ assert.equal(stats.badShape,6);
+ assert.equal(stats.noCitation,0);
+});
+
 test('a malformed notes body throws INVALID_RESEARCH_NOTES',()=>{
  const src=[source()];
  assert.throws(()=>validateResearchNotes(null,src),/INVALID_RESEARCH_NOTES/);

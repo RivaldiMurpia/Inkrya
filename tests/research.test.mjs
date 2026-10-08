@@ -128,6 +128,24 @@ test('prompts stay under the 48k ceiling and the notes prompt carries the source
  assert.match(notesCall.prompt,/e\.com\/a/);
 });
 
+
+test('an adversarial source title cannot push the notes prompt past the 48k ceiling',async()=>{
+ const plan={queries:[{query:'q satu',reason:'r'},{query:'q dua',reason:'r'},{query:'q tiga',reason:'r'}]};
+ const monster='J'.repeat(3000);
+ const model=fakeModel(plan,{summary:'S.',notes:[{heading:'H',body:'B.',citations:[1]}],unanswered:[]});
+ const search=fakeSearch([
+  [{title:monster,url:'https://e.com/1',content:'c',score:0.9}],
+  [{title:monster,url:'https://e.com/2',content:'c',score:0.9}],
+  [{title:monster,url:'https://e.com/3',content:'c',score:0.9}],
+ ]);
+ const result=await runResearch({topic:'t',prepared:{config:{provider:'nebius',id:'x',task:'memory'}},config,generationId:'g9',projectId:'p',userId:'u',recordCredits:async()=>{},search:search.search,call:model.call});
+ for(const c of model.calls){
+  const total=c.system.length+c.prompt.length;
+  assert.ok(total<=48000,'prompt of '+total+' chars exceeds the 48k ceiling');
+ }
+ assert.equal(result.sources.length,3);
+});
+
 test('a malformed plan answer aborts with INVALID_RESEARCH_PLAN before any search',async()=>{
  const model=fakeModel({queries:'banyak'},notes);
  const search=fakeSearch([]);
