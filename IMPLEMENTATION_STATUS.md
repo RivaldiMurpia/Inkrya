@@ -18,7 +18,7 @@ answer as a deterministic 503 (`validateAnswer` now re-anchors quotes per claim)
 Applied live migrations since the last checkpoint: `canon_update_phase5`,
 `doctor_action_phase6`, `research_action_phase7`, `research_credit_usage_phase7`,
 `eval_fixture_phase8_base` and `eval_fixture_phase8_canon` — never reapply.
-Phase 1 Indonesian prose acceptance remains the open gate; Phase 9 (Submission) remains.
+Phase 1 Indonesian prose acceptance remains the open gate. Phase 9 (Submission) was skipped by owner decision 2026-10-08 — the hackathon increment ends at Phase 8.
 
 ## Hackathon upgrade — 2026-09-19 (historical)
 
