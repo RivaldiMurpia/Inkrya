@@ -33,25 +33,34 @@ export function evidenceLabels(pack:DoctorPackage):Map<string,string>{
  return labels;
 }
 
-export function validateDoctorFindings(value:unknown,pack:DoctorPackage):DoctorFinding[]{
+// Aggregate drop reasons — counts only, never finding text. Lets "0 temuan" be explained
+// (clean manuscript vs every finding discarded for fabricated evidence) without persisting
+// or logging any model prose.
+export type DoctorDropStats={proposed:number;kept:number;badShape:number;badEnum:number;badText:number;noEvidence:number};
+
+export function validateDoctorFindings(value:unknown,pack:DoctorPackage,stats?:DoctorDropStats):DoctorFinding[]{
  const x=value as {findings?:unknown}|null;
  if(!x||typeof x!=='object'||!Array.isArray(x.findings)||x.findings.length>12)throw Error('INVALID_DOCTOR');
  const labels=evidenceLabels(pack);
- return x.findings.slice(0,8).flatMap(raw=>{
+ if(stats){stats.proposed=x.findings.length;stats.kept=0;stats.badShape=0;stats.badEnum=0;stats.badText=0;stats.noEvidence=0;}
+ const kept=x.findings.slice(0,8).flatMap(raw=>{
   const f=raw as Record<string,unknown>|null;
-  if(!f||typeof f!=='object')return [];
+  if(!f||typeof f!=='object'){if(stats)stats.badShape++;return []}
   const kind=typeof f.kind==='string'&&(KINDS as readonly string[]).includes(f.kind)?f.kind as DoctorKind:null;
   const severity=typeof f.severity==='string'&&(SEVERITIES as readonly string[]).includes(f.severity)?f.severity as DoctorFinding['severity']:null;
+  if(!kind||!severity){if(stats)stats.badEnum++;return []}
   const claim=text(f.claim,500);
   const explanation=text(f.explanation,800);
-  if(!kind||!severity||!claim||!explanation)return [];
+  if(!claim||!explanation){if(stats)stats.badText++;return []}
   const ids=Array.isArray(f.evidence_ids)?f.evidence_ids.filter((id):id is string=>typeof id==='string'&&labels.has(id)):[];
   // Anti-fabrication floor: no real evidence id, no finding.
-  if(!ids.length)return [];
+  if(!ids.length){if(stats)stats.noEvidence++;return []}
   // chapter_id is a UI link, not evidence: an unresolvable one is nulled, the finding stays.
   const chapterId=text(f.chapter_id,100);
   const resolvedChapter=chapterId&&labels.has(chapterId)?chapterId:null;
   return [{kind,severity,claim,explanation,evidence_ids:ids,chapter_id:resolvedChapter,
    resolvedEvidence:ids.map(id=>({id,label:labels.get(id)!}))}];
  });
+ if(stats)stats.kept=kept.length;
+ return kept;
 }

@@ -59,6 +59,11 @@ test('a non-object or malformed body throws INVALID_DOCTOR',()=>{
  assert.throws(()=>validateDoctorFindings(null,pack),/INVALID_DOCTOR/);
  assert.throws(()=>validateDoctorFindings({findings:'banyak'},pack),/INVALID_DOCTOR/);
 });
+test('drop stats explain why a report came back empty — counts only, never text',()=>{
+ const stats={proposed:0,kept:0,badShape:0,badEnum:0,badText:0,noEvidence:0};
+ validateDoctorFindings(wrap([finding(),finding({evidence_ids:['nope']}),finding({kind:'vibes'}),finding({claim:''})]),pack,stats);
+ assert.deepEqual(stats,{proposed:4,kept:1,badShape:0,badEnum:1,badText:1,noEvidence:1});
+});
 test('evidence labels cover every id type the model can cite',()=>{
  const labels=evidenceLabels(pack);
  assert.match(labels.get('ch-1'),/^Bab: Bab 1/);

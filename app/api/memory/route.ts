@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 import {userDatabase} from '@/lib/server-auth';
 import {parseModelJSON,validateInsights,type MemorySource} from '@/lib/memory-validation';
 import {buildDoctorPackage,doctorCoverage,checkForgottenCharacters} from '@/lib/doctor';
-import {validateDoctorFindings} from '@/lib/doctor-validation';
+import {validateDoctorFindings,type DoctorDropStats} from '@/lib/doctor-validation';
 import {DOCTOR_SYSTEM} from '@/lib/agent-prompts';
 export const maxDuration=60;
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
@@ -93,10 +93,13 @@ async function doctor(db:NonNullable<Awaited<ReturnType<typeof userDatabase>>>,p
    pengingat:'Urutan bab TIDAK sama dengan urutan waktu. Nilai konflik pada story_time, bukan posisi bab.',
   };
   const result=await generateKryaText(prepared,{maxOutputTokens:1800,timeoutMs:35000,system:DOCTOR_SYSTEM,prompt:JSON.stringify(evidencePackage)},{generationId:run.id,projectId,userId:db.authenticatedUserId,sourceCount:pack.chapters.length,workflow:'story-doctor'});
-  aiFindings=validateDoctorFindings(parseModelJSON(result.text),pack);
+  const drops:DoctorDropStats={proposed:0,kept:0,badShape:0,badEnum:0,badText:0,noEvidence:0};
+  aiFindings=validateDoctorFindings(parseModelJSON(result.text),pack,drops);
+  // Counts only in logs — never model prose (same rule as generateKryaText).
+  if(!aiFindings.length&&drops.proposed)console.error('story-doctor','FINDINGS_ALL_DROPPED',JSON.stringify(drops));
   const findings=[...aiFindings.map(f=>({...f,engine:'ai' as const})),...codeFindings];
   const {error:history}=await db.from('ai_generations').update({result:JSON.stringify({coverage,findings}),status:'complete',token_usage:{...result.usage,provider:result.provider,latency_ms:result.latencyMs,trace_status:result.tracing}}).eq('id',run.id);
-  return Response.json({coverage,findings,aiAvailable:true,warning:history?'Laporan belum tersimpan di riwayat.':result.tracing==='failed'?'Laporan tersimpan; trace observabilitas belum terkirim.':null});
+  return Response.json({coverage,findings,aiAvailable:true,dropStats:drops,warning:history?'Laporan belum tersimpan di riwayat.':result.tracing==='failed'?'Laporan tersimpan; trace observabilitas belum terkirim.':null});
  }catch(e){
   // Deterministic findings still answer — the doctor degrades to engine='code', honestly.
   await db.from('ai_generations').update({status:'error'}).eq('id',run.id);
