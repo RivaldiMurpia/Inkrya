@@ -38,21 +38,45 @@ const STATUS_VALUES:AnswerStatus[]=['ANSWERED','NOT_ESTABLISHED','NO_EVIDENCE','
 //
 // Per-claim failure policy (Phase 8 finding): the model occasionally paraphrases its own
 // quote, and ONE such claim used to throw UNSUPPORTED_CITATION, discarding the whole answer
-// server-side (a deterministic 503). Now a paraphrased quote is re-anchored to the real span
-// in its source — the rendered citation stays truthful because the quote is replaced by an
-// exact substring — and only a claim with no anchor at all is dropped. Structural garbage
-// (wrong shape, >6 claims) still throws: that is not a partial answer.
+// server-side (a deterministic 503). A paraphrased quote is re-anchored to a real span in
+// its source, and only a claim with no anchor is dropped. Structural garbage (wrong shape,
+// >6 claims) still throws: that is not a partial answer.
+//
+// Re-anchoring is sentence-bounded (adversarial-review HIGH): a window that merely IS a
+// substring can reverse the source's meaning — the model drops a negation, the surviving
+// tail matches a different sentence, and the UI renders a citation that appears to support
+// the opposite claim. A span therefore counts only if it reaches a sentence BOUNDARY in the
+// source (starts a sentence, ends one, or spans the whole sentence). A splice across two
+// sentences, and a fragment floating mid-sentence from the wrong one, are rejected.
 function reAnchor(quote:string,content:string):string|null{
- // Longest window of the quote that is still an exact substring, shrunk from the end first
- // then the start — cheap (no alignment tables) and sufficient for a one-word paraphrase.
  if(content.includes(quote))return quote;
+ // Sentence boundaries: start of text and after ./!/?. (followed by a space).
+ const starts:number[]=[0];
+ const ends:number[]=[];
+ for(let i=0;i<content.length;i++){
+  const ch=content[i];
+  if((ch==='.'||ch==='!'||ch==='?')&&content[i+1]===' '){ends.push(i+1);starts.push(i+2)}
+ }
+ ends.push(content.length);
+ // Exact sentence matches first — a whole source sentence is the safest anchor.
+ for(let s=0;s<starts.length;s++)for(let e=0;e<ends.length;e++){
+  const sentence=content.slice(starts[s],ends[e]).trim();
+  if(sentence.length>=20&&(quote===sentence||quote.includes(sentence)||sentence.includes(quote)))
+   return content.slice(starts[s],ends[e]).trimEnd();
+ }
+ // A shrink window is accepted only when its span sits ON a boundary: the matched span in
+ // the source must start at a sentence start or end at a sentence end.
  for(let end=quote.length;end>=20;end--){
   const head=quote.slice(0,end);
-  if(content.includes(head))return head;
+  const at=content.indexOf(head);
+  if(at<0)continue;
+  if(starts.some(s=>s===at))return head;
  }
  for(let start=0;start<=quote.length-20;start++){
   const tail=quote.slice(start);
-  if(content.includes(tail))return tail;
+  const at=content.indexOf(tail);
+  if(at<0)continue;
+  if(ends.some(e=>e===at+tail.length))return tail;
  }
  return null;
 }

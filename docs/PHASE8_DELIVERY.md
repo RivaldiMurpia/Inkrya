@@ -81,7 +81,10 @@ Every metric is a pure function (`gradeCase`) of the recorded observation:
 ## Results — live both-arm run, 2026-10-08
 
 Deployment `inkrya-ljchqbjx7` (commit `8d4c8d8`, includes the validateAnswer fix), fixture
-project above, executed by the standing test account. Raw data: `qa/eval/results-2026-10-08-both.json`.
+project above, executed by the standing test account. Raw data:
+`qa/eval/results-2026-10-08-both.json` (re-graded in place after the review fixes — the
+observations are the recorded run, the rubric values were recomputed by the fixed grader;
+both the pre- and post-fix rubrics are derivable from the stored observations + dataset).
 
 ### Pipeline arm (24 cases, 1 errored — an unrelated transient 503 on one ask)
 
@@ -96,16 +99,19 @@ project above, executed by the standing test account. Raw data: `qa/eval/results
 | generation-repair | 2 | 2 | 6/8 |
 
 **33 of 34 observations ran (24 pipeline + 10 baseline); the one error is a transient 503.**
-The 503 rate fell from 4/24 before the `validateAnswer` fix to 1/34 after — the remaining
-one is an unrelated provider blip (the same case returned 200 on an immediate re-probe).
+The 503 rate fell from 4/24 before the `validateAnswer` fix to 1/34 after. The remaining
+one (`r2-arka-helios-start`) is an unrelated provider blip; a manual re-probe of the same
+question returned 200 during the session, but that re-probe is operator observation, not a
+recorded artifact — the recorded state is the 503 in `results-2026-10-08-both.json`.
 
 ### Honest reading of the misses
 
 - `t2-chronology-order`, `k4-arka-knows-death`, and (this run) `k1-mira-before-ch8` came back
   `NOT_ESTABLISHED`, not wrong — retrieval did not surface the chapter the question needed, so
   the ask **abstained honestly** instead of inventing an answer. That is the abstention contract
-  working, but it is a **retrieval-recall miss** the rubric scores as a failure. In run 4 the
-  same `k1` answered correctly from Bab 8; the verdict moves with retrieval. Recorded, not hidden.
+  working, but it is a **retrieval-recall miss** the rubric scores as a failure. An earlier
+  pipeline-only run graded `k1` as answered (with its citation landing on Bab 8 rather than
+  Bab 3 — 2/4, still not a clean pass); the verdict moves with retrieval. Recorded, not hidden.
 - `t1-flashback-ch7` answered correctly ("Ya, Dr. Vale masih hidup pada Bab 7 [Bab 7]") but
   did not repeat the year "2045" the rubric required — `must_mention` is a strict substring
   check, so a correct answer can fail it.
@@ -132,12 +138,14 @@ earlier draft scored it `true` for both arms and overstated the baseline by two 
 
 ### Baseline vs pipeline (the demo-spec §13 claim)
 
-On every paired question case the pipeline produced the exact story fact with a verbatim
-citation while the context-free baseline produced no citation, wrong dates, or invented
-content — `t3-death-date`: pipeline "meninggal pada tanggal 11 Maret 2048 [Bab 5]" vs baseline
-0/4; `k2-mira-learns`: pipeline's exact 2048-04-17 transition vs baseline 0/4. Without
-retrieval the model cannot cite the story and cannot give story times — the comparison is
-the product's core claim made measurable.
+On the three paired question cases that completed, the pipeline produced the exact story
+fact with a verbatim citation while the context-free baseline produced no citation, wrong
+dates, or invented content — `t3-death-date`: pipeline "meninggal pada tanggal 11 Maret
+2048 [Bab 5]" vs baseline 0/4; `k2-mira-learns`: pipeline's exact 2048-04-17 transition vs
+baseline 0/4. (`r2-arka-helios-start` errored with a transient 503 in the recorded run, so
+it measured nothing — see the honesty note below.) Without retrieval the model cannot cite
+the story and cannot give story times — the comparison is the product's core claim made
+measurable.
 
 On continuity the picture is more honest and more interesting: both arms DETECT the planted
 hazards most of the time (the hazards are visible in the prompt itself), but only the
@@ -181,9 +189,10 @@ instead of silently scoring a blank draft as a clean result.
 ## LangSmith dataset
 
 `scripts/eval-upload-langsmith.mjs` is idempotent (create-if-absent, skip existing example
-ids). With no `LANGSMITH_API_KEY` in the local environment it exits 0 with `SKIPPED_NO_KEY`,
-and this report records **repo-only** as the verified state; the upload path is one env var
-away and was smoke-verified for both outcomes.
+ids). With no `LANGSMITH_API_KEY` in the local environment it exits 0 with `SKIPPED_NO_KEY`.
+**Verified state: repo-only** — the skip path was exercised live; the upload path itself has
+NOT been executed against LangSmith (it requires the key locally, which only the owner can
+place in `.env.local`). It is one env var away.
 
 ## Toloka (optional) — recommendation to skip
 

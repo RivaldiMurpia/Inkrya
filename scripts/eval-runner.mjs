@@ -79,7 +79,8 @@ async function postJson(path,token,body){
 async function runAsk(item,token,titles){
  const {status,text}=await postJson('/api/memory',token,{projectId:FIXTURE_PROJECT,action:'ask',question:item.input.question});
  if(status!==200)return {kind:'ask',status:'',citations:[],answer:'',error:`HTTP_${status}`};
- const body=JSON.parse(text);
+ // A 200 with a non-JSON body (a proxy page) is an errored observation, not a crash.
+ let body;try{body=JSON.parse(text)}catch{return {kind:'ask',status:'',citations:[],answer:'',error:'NON_JSON_BODY'}}
  return {
   kind:'ask',status:body.status,answer:body.answer??'',
   citations:(body.citations??[]).map(c=>({chapter_id:c.chapter_id,title:titles.get(c.chapter_id)??c.title??''})),
@@ -179,7 +180,17 @@ const titles=await chapterTitles(token);
 const results=[];
 
 for(const item of cases){
- const observation=item.input.question?await runAsk(item,token,titles):await runWrite(item,token);
+ // One case failing must never cost the run: any unexpected throw (a provider timeout, a
+ // non-JSON 200 body from deployment protection) is recorded as an errored observation.
+ let observation;
+ try{
+  observation=item.input.question?await runAsk(item,token,titles):await runWrite(item,token);
+ }catch(e){
+  observation=item.input.question
+   ?{kind:'ask',status:'',citations:[],answer:'',error:'RUNNER_EXCEPTION'}
+   :{kind:'write',findings:[],repairAttempts:null,unresolved:0,draft:'',error:'RUNNER_EXCEPTION'};
+  console.error(`eval pipeline ${item.id} threw:`,e instanceof Error?e.message:String(e));
+ }
  results.push({id:item.id,category:item.category,arm:'pipeline',observation,rubric:gradeCase(item.expected,observation)});
  console.log(`eval pipeline ${item.id} ran=${observation.error?'no':'yes'}`);
  // Stay above the 10-second spinner between writes; the test account is exempt but the
@@ -189,7 +200,15 @@ for(const item of cases){
 
 if(arm==='both'){
  for(const item of cases.filter(c=>c.arm==='both')){
-  const observation=item.input.question?await baselineAsk(item):await baselineWrite(item);
+  let observation;
+  try{
+   observation=item.input.question?await baselineAsk(item):await baselineWrite(item);
+  }catch(e){
+   observation=item.input.question
+    ?{kind:'ask',status:'',citations:[],answer:'',error:'RUNNER_EXCEPTION'}
+    :{kind:'write',findings:[],repairAttempts:null,unresolved:0,draft:'',error:'RUNNER_EXCEPTION'};
+   console.error(`eval baseline ${item.id} threw:`,e instanceof Error?e.message:String(e));
+  }
   results.push({id:item.id,category:item.category,arm:'baseline',observation,rubric:gradeCase(item.expected,observation)});
   console.log(`eval baseline ${item.id} ran=${observation.error?'no':'yes'}`);
  }

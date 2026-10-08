@@ -28,6 +28,28 @@ assert.throws(()=>validateAnswer(null,[source]));
 // (still never throws — one junk claim must not cost the whole response).
 assert.equal(validateAnswer({claims:[{text:'No source'}]},[source]).status,'NOT_ESTABLISHED');
 
+// Re-anchor must not splice: an anchored span only counts when it sits on a source sentence
+// BOUNDARY (start, end, or the whole sentence), so a window from the WRONG sentence — or one
+// that splices two sentences — is rejected and the claim dropped.
+const twoSentences={id:'s2',chapter_id:'c1',title:'Bab 1',source_revision:1,chunk_index:0,
+ content:'Aurel bekerja di kantor BUMN di Duri. Kunci itu disimpan di laci meja radio stasiun lama.'};
+const spliced=validateAnswer({claims:[
+ {text:'Kunci itu ada di kantor BUMN.',source_id:'s2',quote:'kunci itu disimpan di laci meja radio kantor BUMN di Duri'},
+],status:'ANSWERED'},[twoSentences]);
+assert.equal(spliced.claims.length,0); // the splice finds no sentence-bounded anchor → dropped
+assert.equal(spliced.status,'NOT_ESTABLISHED'); // honest abstention, not a fabricated citation
+
+// A quote that drops the source's negation must NOT re-anchor: the surviving tail contradicts
+// the source, so it is dropped — the answer abstains instead of shipping a supporting-looking
+// citation for the opposite claim.
+const negation={id:'s3',chapter_id:'c1',title:'Bab 3',source_revision:1,chunk_index:0,
+ content:'Mira yang membaca laporan itu masih belum mengetahui nama proyeknya. Ia menyimpan kuncinya di laci.'};
+const flipped=validateAnswer({claims:[
+ {text:'Mira mengetahui nama proyeknya.',source_id:'s3',quote:'Mira mengetahui nama proyeknya'},
+],status:'ANSWERED'},[negation]);
+assert.equal(flipped.claims.length,0,'a negation-dropping paraphrase must not become a citation');
+assert.equal(flipped.status,'NOT_ESTABLISHED');
+
 // Phase 8 finding: ONE paraphrased quote used to throw away the WHOLE answer, 503ing the ask
 // deterministically. A quote that is not an exact substring is now re-anchored to the real
 // span in its source, so the claim survives with a truthful quote; a claim whose source_id

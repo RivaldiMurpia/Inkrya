@@ -16,7 +16,9 @@ seeded by `database/eval-fixture-phase8.sql` + `eval-fixture-phase8-canon.sql`).
   - `chapters` — expected chapter titles among the citations.
   - `mustMention` — substrings the answer text must contain.
   - `answerMustNotContain` — substrings the answer must not contain (over-claim guard).
-  - `issue_types` — Guardian issue types a continuity case MUST surface (any of the listed types matching counts; `issue_type_match` requires at least the first, `issue_detected` requires ≥1 finding).
+  - `issue_types` — Guardian issue types a continuity case may surface: the rubric passes when
+    **any** of the listed types appears (`issue_type_match` = any-of), while `issue_detected`
+    requires ≥1 finding at all. Flagging only unrelated types still fails the case.
   - `forbidden_issue_types` — types that must NOT appear (false-positive guard).
   - `max_repair_attempts` — repair budget (always 2, the graph's own bound).
 - `note` — why the case exists (demo-spec section references).
