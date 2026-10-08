@@ -14,3 +14,9 @@ node_modules/
 Thumbs.db
 desktop.ini
 *.log
+
+# local e2e scratch (tokens, cookies, response dumps)
+.e2e_*
+e2e_login.json
+doctor_*.json
+qa_project.json
