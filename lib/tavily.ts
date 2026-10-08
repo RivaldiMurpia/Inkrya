@@ -18,14 +18,16 @@ export async function searchTavily(query:string,options:{apiKey:string;maxResult
  const timeout=options.timeoutMs??15000;
  let response:Response;
  try{
+  // AbortSignal.any combines the per-call deadline with the caller's request signal.
+  const timed=AbortSignal.timeout(timeout);
+  const signal=options.signal?AbortSignal.any([timed,options.signal]):timed;
   response=await request(TAVILY_ENDPOINT,{
    method:'POST',
    headers:{'Content-Type':'application/json',Authorization:`Bearer ${options.apiKey}`},
    body:JSON.stringify({query:trimmed,search_depth:'basic',max_results:options.maxResults??MAX_RESULTS_PER_QUERY,include_answer:false,include_raw_content:false}),
    redirect:'error',
    cache:'no-store',
-   timeout,
-   signal:options.signal,
+   signal,
   });
  }catch{
   throw Error('TAVILY_UNAVAILABLE');

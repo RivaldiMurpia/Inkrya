@@ -78,8 +78,10 @@ test('the result content is a trimmed string and missing content becomes empty',
  assert.equal(res[1].content,'teks');
 });
 
-test('the caller signal combines with the per-call timeout',async()=>{
+test('the per-call timeout and the caller signal are combined into one signal',async()=>{
  let captured;
- await searchTavily('q',{apiKey:'k',timeoutMs:12345,signal:AbortSignal.abort(),request:async(url,init)=>{captured=init;return okResponse([])}});
- assert.equal(captured.timeout,12345);
+ const caller=AbortSignal.abort();
+ await searchTavily('q',{apiKey:'k',timeoutMs:12345,signal:caller,request:async(url,init)=>{captured=init;return okResponse([])}});
+ assert.equal(captured.timeout,undefined); // no non-standard field leaks into RequestInit
+ assert.equal(captured.signal.aborted,true); // the combined signal inherits the caller's abort
 });
