@@ -1,0 +1,847 @@
+{
+ "generated_at": "2026-10-08T13:46:41.900Z",
+ "fixture_project_id": "bbbbbbbb-bbbb-4bbb-8bbb-000000000001",
+ "by_category": {
+  "retrieval:pipeline": {
+   "cases": 6,
+   "ran": 5,
+   "passed": 16,
+   "applicable": 16
+  },
+  "story-time:pipeline": {
+   "cases": 4,
+   "ran": 3,
+   "passed": 7,
+   "applicable": 12
+  },
+  "knowledge:pipeline": {
+   "cases": 4,
+   "ran": 2,
+   "passed": 6,
+   "applicable": 8
+  },
+  "false-positive:pipeline": {
+   "cases": 3,
+   "ran": 3,
+   "passed": 3,
+   "applicable": 3
+  },
+  "abstention:pipeline": {
+   "cases": 1,
+   "ran": 1,
+   "passed": 0,
+   "applicable": 1
+  },
+  "continuity:pipeline": {
+   "cases": 4,
+   "ran": 4,
+   "passed": 7,
+   "applicable": 8
+  },
+  "generation-repair:pipeline": {
+   "cases": 2,
+   "ran": 2,
+   "passed": 8,
+   "applicable": 8
+  }
+ },
+ "totals": {
+  "cases": 24,
+  "ran": 20,
+  "errored": 4
+ },
+ "arm": "pipeline",
+ "deployment": "https://inkrya-g9ipqahq3-rivaldi-murpias-projects.vercel.app",
+ "cases": [
+  {
+   "id": "r1-mira-helios-first",
+   "category": "retrieval",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Mira pertama kali mengetahui tentang Project Helios pada 2048-04-17 saat Arka membuka seluruh berkas dan mengaku segalanya. [1]",
+    "citations": [
+     {
+      "chapter_id": "b66de403-cbb8-4388-bceb-7d6fe9e94c06",
+      "title": "Bab 8 — Helios Terbuka"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true
+    },
+    "passed": 3,
+    "applicable": 3
+   }
+  },
+  {
+   "id": "r2-arka-helios-start",
+   "category": "retrieval",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "",
+    "citations": [],
+    "answer": "",
+    "error": "HTTP_503"
+   },
+   "rubric": {
+    "ran": false,
+    "checks": {
+     "status_match": null,
+     "evidence_recall": null,
+     "citation_correct": null
+    },
+    "passed": 0,
+    "applicable": 0
+   }
+  },
+  {
+   "id": "r3-vale-death",
+   "category": "retrieval",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Dr. Elias Vale meninggal di laboratoriumnya pada tanggal 11 Maret 2048. [1]",
+    "citations": [
+     {
+      "chapter_id": "6d4c73e5-783a-47fb-b035-4076ff0a96aa",
+      "title": "Bab 5 — Kanal yang Mati"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true,
+     "must_mention": true
+    },
+    "passed": 4,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "r4-arka-firearm",
+   "category": "retrieval",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Arka menolak memegang senjata api karena ia mengalami trauma dari perampokan bersenjata yang melukai ayahnya saat ia berusia enam belas tahun. [1]",
+    "citations": [
+     {
+      "chapter_id": "a7d9d091-5d15-44ae-99df-2871e39ab349",
+      "title": "Bab 4 — Sebelum Keheningan"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true
+    },
+    "passed": 3,
+    "applicable": 3
+   }
+  },
+  {
+   "id": "r5-mira-arka-relation",
+   "category": "retrieval",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Mira Voss adalah saudara tiri Arka Vale. [1]",
+    "citations": [
+     {
+      "chapter_id": "20e6efee-efcf-4ef3-9faf-7fb8028adb56",
+      "title": "Bab 9 — Garis Darah"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true
+    },
+    "passed": 3,
+    "applicable": 3
+   }
+  },
+  {
+   "id": "r6-station-status",
+   "category": "retrieval",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "setelah Bab 6, akses publik Helios Station ditutup dan hanya dibatasi untuk tim inti [1]",
+    "citations": [
+     {
+      "chapter_id": "0d993ec0-4c0c-4001-aa00-5e4e8b27eb68",
+      "title": "Bab 6 — Koordinat Palsu"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true
+    },
+    "passed": 3,
+    "applicable": 3
+   }
+  },
+  {
+   "id": "t1-flashback-ch7",
+   "category": "story-time",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Ya, Dr. Elias Vale masih hidup pada Bab 7. [1]",
+    "citations": [
+     {
+      "chapter_id": "17160b71-f3c9-4f1c-bd5e-eee9c048e5f1",
+      "title": "Bab 7 — Laboratorium Lama"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true,
+     "must_mention": false
+    },
+    "passed": 3,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "t2-chronology-order",
+   "category": "story-time",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "",
+    "citations": [],
+    "answer": "",
+    "error": "HTTP_503"
+   },
+   "rubric": {
+    "ran": false,
+    "checks": {
+     "status_match": null,
+     "evidence_recall": null,
+     "citation_correct": null,
+     "must_mention": null
+    },
+    "passed": 0,
+    "applicable": 0
+   }
+  },
+  {
+   "id": "t3-death-date",
+   "category": "story-time",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Dr. Elias Vale meninggal pada tanggal 11 Maret 2048. [1]",
+    "citations": [
+     {
+      "chapter_id": "6d4c73e5-783a-47fb-b035-4076ff0a96aa",
+      "title": "Bab 5 — Kanal yang Mati"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true,
+     "must_mention": true
+    },
+    "passed": 4,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "t4-chapter-ten",
+   "category": "story-time",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "NO_EVIDENCE",
+    "answer": "Belum ditemukan bukti pada indeks terbaru. Perbarui Memory atau coba sebutkan nama karakter/kata kunci yang lebih spesifik.",
+    "citations": []
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": false,
+     "evidence_recall": false,
+     "citation_correct": false,
+     "must_mention": false
+    },
+    "passed": 0,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "k1-mira-before-ch8",
+   "category": "knowledge",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Sebelum Bab 8, Mira tidak mengetahui bahwa Project Helios ada. [1]",
+    "citations": [
+     {
+      "chapter_id": "b66de403-cbb8-4388-bceb-7d6fe9e94c06",
+      "title": "Bab 8 — Helios Terbuka"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": false,
+     "citation_correct": false,
+     "answer_must_not_contain": true
+    },
+    "passed": 2,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "k2-mira-learns",
+   "category": "knowledge",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Mira mengetahui bahwa Project Helios itu nyata pada tanggal 2048-04-17. [1]",
+    "citations": [
+     {
+      "chapter_id": "b66de403-cbb8-4388-bceb-7d6fe9e94c06",
+      "title": "Bab 8 — Helios Terbuka"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": true,
+     "evidence_recall": true,
+     "citation_correct": true,
+     "must_mention": true
+    },
+    "passed": 4,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "k3-trauma-later",
+   "category": "knowledge",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "",
+    "citations": [],
+    "answer": "",
+    "error": "HTTP_503"
+   },
+   "rubric": {
+    "ran": false,
+    "checks": {
+     "status_match": null,
+     "answer_must_not_contain": null
+    },
+    "passed": 0,
+    "applicable": 0
+   }
+  },
+  {
+   "id": "k4-arka-knows-death",
+   "category": "knowledge",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "",
+    "citations": [],
+    "answer": "",
+    "error": "HTTP_503"
+   },
+   "rubric": {
+    "ran": false,
+    "checks": {
+     "status_match": null,
+     "evidence_recall": null,
+     "citation_correct": null
+    },
+    "passed": 0,
+    "applicable": 0
+   }
+  },
+  {
+   "id": "a1-flashback-safe-write",
+   "category": "false-positive",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [],
+    "repairAttempts": 0,
+    "unresolved": 0,
+    "draft": "20 Agustus 2045, pagi hari. Arka Vale berjalan masuk ke laboratorium lama bawah tanah dengan langkah hati-hati, tubuhnya masih gemetar dari kejadian kemarin—perampokan di pintu laboratorium yang menyaksikan ayahnya terluka oleh senjata api. Dia belum sembuh dari gemetaran itu, bahkan napasnya terasa pendek saat ingatan kepanasan logam dan suara tembakan masih memantul di telinga.\n\nDi dalam, Dr. El"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "false_positive_avoided": true
+    },
+    "passed": 1,
+    "applicable": 1
+   }
+  },
+  {
+   "id": "a2-belief-vs-truth-write",
+   "category": "false-positive",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [],
+    "repairAttempts": 0,
+    "unresolved": 0,
+    "draft": "Gerimis halus menyayat wajah Arka saat ia berdiri diamond di depan entri laboratorium bawah tanah, tangan masih menggigil di sisi tubuhnya. Udara berisi aroma tanah basah dan logam dari perbekalan medis yang tersebur di sekitarnya—sisa-sisa kekacauan dari tadi malam, ketika senjatakuiah meradek di pintu masuk dan peluru melatih ayahnya seperti benang yang putus. Dr. Elias Vale terjerumus di dekat "
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "false_positive_avoided": true
+    },
+    "passed": 1,
+    "applicable": 1
+   }
+  },
+  {
+   "id": "a3-technical-talk-before-ch8",
+   "category": "false-positive",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [],
+    "repairAttempts": 0,
+    "unresolved": 0,
+    "draft": "Mira duduk di mejanya di laboratorium pasang surut, cahaya monitor memancarkan biru pucat di wajahnya.  \nDi depannya, rangkaian grafik sinus dan spikes tak teratur melintas di layar analisis spektral—bukan noise biasa, tetapi pola berulang dengan jeda tepat 7,3 detik.  \nSidik jari kosong mengitari tepi kopi yang sudah dingin; mata Mira mengukir nilai frekuensi, amplitudo, dan faseShift ke dalam ca"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "false_positive_avoided": true
+    },
+    "passed": 1,
+    "applicable": 1
+   }
+  },
+  {
+   "id": "a4-unknown-sibling-ask",
+   "category": "abstention",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "ask",
+    "status": "ANSWERED",
+    "answer": "Kakak Arka yang menyerahkan catatan laboratorium kepadanya adalah Dr. Elias Vale. [1]",
+    "citations": [
+     {
+      "chapter_id": "44c8519d-d15e-42e5-b9ce-c9193383136f",
+      "title": "Bab 1 — Deteksi Pertama"
+     }
+    ]
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "status_match": false
+    },
+    "passed": 0,
+    "applicable": 1
+   }
+  },
+  {
+   "id": "c1-signature-prompt",
+   "category": "continuity",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [
+     {
+      "type": "alive_dead_conflict",
+      "severity": "critical",
+      "claim": "Dr. Elias Vale is alive and being confronted on April 1, 2048.",
+      "evidence_ids": [
+       "5dc2e681-21a2-4f7f-aed7-8762435396dc"
+      ],
+      "explanation": "According to the timeline, Dr. Elias Vale died on March 11, 2048. The scene is set on April 1, 2048, which is after his death, making his presence alive in the scene a direct contradiction.",
+      "repair_hint": "Either change the scene_story_time to a date before March 11, 2048 (e.g., February 2048), or retract/alter the death event in canon to allow Vale to be alive on April 1, 2048."
+     },
+     {
+      "type": "knowledge_leak",
+      "severity": "high",
+      "claim": "Mira confronts Vale about Project Helios on April 1, 2048, implying she knows it exists.",
+      "evidence_ids": [
+       "9bfe56af-71db-4832-9350-25b7ad566e29",
+       "19dd2c35-0163-4001-be26-65f0b6254506"
+      ],
+      "explanation": "Mira only learns that Project Helios is real on April 17, 2048. Confronting Vale about it on April 1 presumes knowledge she does not yet possess, creating a knowledge leak.",
+      "repair_hint": "Have Mira confront Vale based on suspicion, fragmented data, or circumstantial evidence (e.g., corrupted files, unusual signals) without asserting she knows Helios is real. Avoid naming 'Project Helios' as a confirmed fact in her dialogue until after April 17."
+     },
+     {
+      "type": "behavior_inconsistency",
+      "severity": "medium",
+      "claim": "Arka draws and holds a firearm to force an answer, violating his trauma-based avoidance of firearms.",
+      "evidence_ids": [
+       "ed0bbc2c-8b9b-45b2-a8c8-365f13a00e94",
+       "23311a74-e617-4a43-b4f5-c01d2763ca7c"
+      ],
+      "explanation": "Arka's canon behavior shows a deep trauma preventing him from touching firearms, stemming from witnessing his father's injury in a 2045 robbery. Drawing a weapon, even defensively, contradicts this unless framed as a traumatic exception with clear internal conflict.",
+      "repair_hint": "Show Arka's extreme distress, hesitation, or physical reluctance when drawing the weapon—emphasize that this action goes against his nature and causes him psychological pain, preserving the trauma's validity while allowing the act under duress."
+     },
+     {
+      "type": "timeline_contradiction",
+      "severity": "critical",
+      "claim": "Dr. Elias Vale is alive and being confronted on April 1, 2048.",
+      "evidence_ids": [
+       "5dc2e681-21a2-4f7f-aed7-8762435396dc"
+      ],
+      "explanation": "Canon establishes Dr. Elias Vale died on March 11, 2048. The scene is set on April 1, 2048, which is after his death, making his confrontation impossible.",
+      "repair_hint": "Move the scene to before March 11, 2048, or establish an alternate timeline where Vale survives."
+     },
+     {
+      "type": "knowledge_leak",
+      "severity": "high",
+      "claim": "Mira confronts Dr. Vale about Project Helios on April 1, 2048, implying she knows it exists.",
+      "evidence_ids": [
+       "9bfe56af-71db-4832-9350-25b7ad566e29",
+       "19dd2c35-0163-4001-be26-65f0b6254506"
+      ],
+      "explanation": "Mira does not learn Project Helios is real until April 17, 2048. Her confrontation on April 1 presumes knowledge she does not yet possess.",
+      "repair_hint": "Have Mira speculate or suspect based on fragmented data, but not claim certainty about Helios' existence until after April 17."
+     },
+     {
+      "type": "knowledge_leak",
+      "severity": "high",
+      "claim": "Mira confronts Dr. Vale about Project Helios on April 1, 2048, implying she knows about it.",
+      "evidence_ids": [
+       "9bfe56af-71db-4832-9350-25b7ad566e29"
+      ],
+      "explanation": "Canon establishes that Mira first learns Project Helios is real on April 17, 2048. Her confrontation on April 1 presumes knowledge she does not yet possess, violating knowledge lock constraints.",
+      "repair_hint": "Adjust the scene so Mira suspects something but does not yet name or confirm Project Helios, or move the scene to on or after April 17, 2048."
+     },
+     {
+      "type": "behavior_inconsistency",
+      "severity": "medium",
+      "claim": "Arka draws and threatens with a firearm on April 1, 2048.",
+      "evidence_ids": [
+       "ed0bbc2c-8b9b-45b2-a8c8-365f13a00e94"
+      ],
+      "explanation": "Arka’s canon behavior is to avoid firearms due to trauma from the 2045 robbery. Drawing a weapon contradicts this unless framed as a traumatic exception with clear internal conflict shown, which the draft does not adequately depict.",
+      "repair_hint": "Show Arka’s extreme distress, hesitation, or flashback while drawing the weapon to justify the violation of his trauma-based avoidance as a last-resort protective act."
+     }
+    ],
+    "repairAttempts": 2,
+    "unresolved": 3,
+    "draft": "Mira berdiri di depan meja kerja Vale, tangan kedua menempel pada pinggiran besi yang masih hangat dari aktivitas sebelumnya. Rahasia yang ingin dia gali bukan sekadar teknologi — ia merasa seperti sedang menjelajah lubang hitam tanpa cahaya. Mengapa frekuensi anomali yang selalu muncul pada jam 03:00 setiap Senin itu terasa seperti… pesan? Bukan hanya noise. Tapi tanpa akses ke data mentah, tanpa"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "issue_detected": true,
+     "issue_type_match": true
+    },
+    "passed": 2,
+    "applicable": 2
+   }
+  },
+  {
+   "id": "c2-firearm-casual",
+   "category": "continuity",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [
+     {
+      "type": "behavior_inconsistency",
+      "severity": "medium",
+      "claim": "Arka performs routine maintenance on his military-standard pistol with calm, trained movements despite lifelong avoidance of firearms due to trauma.",
+      "evidence_ids": [
+       "23311a74-e617-4a43-b4f5-c01d2763ca7c",
+       "a485da64-0710-4e2f-83b5-08059196c5c2",
+       "5a3195a6-8954-491b-93aa-fe5dcabb9b87"
+      ],
+      "explanation": "Evidence shows Arka has a deep-seated trauma from witnessing his father injured by armed robbers in 2045, leading him to avoid firearms entirely for life — he recoils when offered a gun and refuses to hold one. Yet in this scene set on 2045-08-19 (the same day as the trauma), he calmly maintains a military pistol with ritualistic precision, which contradicts his established aversion unless explicitly framed as a military duty or paternal instruction. No such justification is provided in the draft.",
+      "repair_hint": "Clarify that Arka is cleaning the pistol under direct orders from his father or as part of a mandatory military/police drill, making it an exception to his personal aversion. Alternatively, shift the scene to post-2048 where his relationship with firearms has evolved, or show visible distress during the cleaning to maintain behavioral consistency."
+     },
+     {
+      "type": "timeline_contradiction",
+      "severity": "high",
+      "claim": "Arka recounts details of the 'last mission' involving signal infiltration and the first recording of Sinyal Terakhir as if it occurred recently, but evidence indicates this discovery happened years later in 2048.",
+      "evidence_ids": [
+       "a485da64-0710-4e2f-83b5-08059196c5c2",
+       "283dd7e3-0113-4d09-9e4c-da79748af56b"
+      ],
+      "explanation": "The draft places Arka's recollection of the signal insertion operation and discovery of the first Sinyal Terakhir recording during a conversation on 2045-08-19. However, canon evidence confirms Arka first detected the Sinyal Terakhir on 2048-03-02, meaning he could not have known about or participated in retrieving it in 2045. This creates a timeline contradiction where future knowledge is depicted as past experience.",
+      "repair_hint": "Reframe Arka’s story as a hypothetical or training exercise based on early Project Helios groundwork his father discussed, or shift the scene_story_time to after 2048-03-02. Alternatively, have him speak of preparing for such a mission rather than having completed it, aligning with his pre-discovery knowledge state."
+     },
+     {
+      "type": "knowledge_leak",
+      "severity": "high",
+      "claim": "Mira questions Arka about being 'senang' with firearms, implying awareness of his trauma, but evidence confirms she did not learn the origin of his firearm aversion until 2048-03-04.",
+      "evidence_ids": [
+       "0279068e-c807-4e2a-9743-c65b82b7b42e",
+       "5a3195a6-8954-491b-93aa-fe5dcabb9b87"
+      ],
+      "explanation": "Mira’s line — ‘Tapi kamu... kamu senang... senjata?’ — suggests she understands Arka’s emotional relationship with firearms enough to question if he now enjoys them. However, explicit evidence states Mira did not know the cause of Arka’s firearm trauma until 2048-03-04. Since this scene is set on 2045-08-19, her insight would constitute premature knowledge inaccessible to her at that time.",
+      "repair_hint": "Have Mira express only surprise or curiosity at seeing Arka handle a gun — e.g., ‘Tapi kamu... pernah menangani senjata?’ — without referencing his emotional state or trauma. Avoid implying she understands the psychological roots of his behavior before 2048-03-04."
+     },
+     {
+      "type": "behavior_inconsistency",
+      "severity": "medium",
+      "claim": "Arka membersihkan pistol dengan santai dan ritualis, padahal bukti menunjukkan ia menghindari senjata api karena trauma.",
+      "evidence_ids": [
+       "a485da64-0710-4e2f-83b5-08059196c5c2",
+       "5a3195a6-8954-491b-93aa-fe5dcabb9b87",
+       "23311a74-e617-4a43-b4f5-c01d2763ca7c"
+      ],
+      "explanation": "Draf menunjukkan Arka membersihkan pistol dengan gerakan terlihat dan almost ritualis, tanpa reaksi emosional negatif. Namun bukti menjelaskan bahwa trauma senjata api Arka berasal dari perampokan 2045 yang melukai ayahnya, membuatnya menghindari senjata api seumur hidup — seperti saat dia menolak pistol dengan tangan gemetar dan bahkan tidak mau memegang gagangnya. Membersihkan pistol dengan tenang dalam konteks non-flashback merepresentasikan perilaku yang tidak konsisten dengan trauma yang diamfaatkan sebagai dasar’identitasnya.",
+      "repair_hint": "Jika membersihkan pistol diperlukan, tambahkan konteks bahwa ini adalah perintah langsung dari ayahnya (Dr. Elias Vale) sebagai bagian dari disiplin keluarga, dan sertakan reaksi internal Arka — ketakotan, mengingat trauma, atau membicarakan ini sebagai bentuk taat yang менyakiti hatinya — agar perilaku tetap konsisten dengan trauma yang dikenali."
+     },
+     {
+      "type": "knowledge_leak",
+      "severity": "medium",
+      "claim": "Mira asks about Arka's experience with firearms despite not knowing his trauma origin until 2048-03-04",
+      "evidence_ids": [
+       "0279068e-c807-4e2a-9743-c65b82b7b42e"
+      ],
+      "explanation": "In this scene set on 2045-08-19, Mira asks Arka if he has ever handled firearms ('Tapi kamu... pernah menangani senjata?'). However, according to evidence, Mira does not learn the origin of Arka's firearm trauma until 2048-03-04. Before that date, she should not have sufficient context to connect his avoidance of weapons to traumatic experience, making this question premature and inconsistent with her established knowledge state. While general awareness of his avoidance might exist, the specificity of the question implies knowledge of the trauma's cause, which she lacks prior to 2048-03-04.",
+      "repair_hint": "Revise Mira’s line to reflect general observation without referencing trauma causality—for example, she could express surprise at seeing him handle a weapon given his past reluctance, without invoking the unknown origin of that reluctance."
+     }
+    ],
+    "repairAttempts": 2,
+    "unresolved": 1,
+    "draft": "Arka duduk santai di bangku batu di pojok laboratorium bawah tanah, cahaya redup dari lampu darurat menyoruti meja kecil depannya. Di tangannya, pistolet standar militer yang telah lama tidak disentuh—keliping logamnya masih licin dari pelaman lama, tetapi dia membersihkannya dengan gerakan yang terlatih, hampir ritualis—gerakan yang dilakukan karena perintah langsung dari ayahnya, Dr. Elias Vale,"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "issue_detected": true,
+     "issue_type_match": true
+    },
+    "passed": 2,
+    "applicable": 2
+   }
+  },
+  {
+   "id": "c3-post-death-visit",
+   "category": "continuity",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [
+     {
+      "type": "knowledge_leak",
+      "severity": "high",
+      "claim": "Mira accepts the reality of Project Helios without surprise or skepticism upon receiving the file.",
+      "evidence_ids": [
+       "9bfe56af-71db-4832-9350-25b7ad566e29"
+      ],
+      "explanation": "According to canon, Mira only learns that Project Helios is real on 17 April 2048. The scene occurs on 1 April 2048, so she should not yet know this fact. Her calm acceptance and lack of questioning contradict her established state of ignorance at this time.",
+      "repair_hint": "Revise Mira's reaction to show confusion, skepticism, or cautious curiosity—not acceptance. She should question the contents or express doubt about the file's authenticity or significance, reflecting her lack of confirmation about Project Helios' existence prior to 17 April."
+     }
+    ],
+    "repairAttempts": 1,
+    "unresolved": 0,
+    "draft": "1 April 2048, siang hari. Helios Station beroperasi dengan tenunan sinyal ringan dari antena pusat. Dr. Elias Vale tiba menggunakan jalur layanan unik, mengenalkan jas lab yang sedikit kusam tetapi masih rapi. Dia membawa kantong dokumen bahan tahan air, mengeratkan erat di siku kirinya.\n\nMira Voss sedang memantau panel navigasi orbital di ruang kontrol bawah, fokus pada drift satelit pasif. Ia be"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "issue_detected": true,
+     "issue_type_match": false
+    },
+    "passed": 1,
+    "applicable": 2
+   }
+  },
+  {
+   "id": "c4-world-rule-violation",
+   "category": "continuity",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [
+     {
+      "type": "world_rule_violation",
+      "severity": "critical",
+      "claim": "Mira detects Helios transmission using a regular radio purchased from a market.",
+      "evidence_ids": [
+       "c4c6ea24-2963-409b-876f-4a5ccbf27ce8"
+      ],
+      "explanation": "The canon explicitly states that Helios transmissions cannot be detected without a receiver with special configuration attached to the tower; ordinary devices only hear silence. The draft depicts Mira detecting a structured bip signal via a cheap, basic radio with no special configuration, directly violating this rule.",
+      "repair_hint": "Either establish that Mira's radio has been unknowingly modified or possesses rare properties (e.g., alien tech from market), or shift detection to a moment when she has access to proper Helios-receiving equipment (e.g., at work or via Arka), preserving canon while maintaining narrative intent."
+     },
+     {
+      "type": "canon_contradiction",
+      "severity": "critical",
+      "claim": "Mira detects Helios transmission using a regular radio from a market.",
+      "evidence_ids": [
+       "c4c6ea24-2963-409b-876f-4a5ccbf27ce8"
+      ],
+      "explanation": "Canon establishes that Helios transmissions are detectable only with the specialized tower receiver configuration and cannot be detected by ordinary devices. The draft shows Mira detecting the transmission with a simple market-bought radio, directly violating this rule.",
+      "repair_hint": "Either change the detection method to require the special receiver (e.g., Mira gains access to or borrows configured equipment), or adjust the canon rule if this early detection is intentional plot device — but as stated, it contradicts current evidence."
+     },
+     {
+      "type": "world_rule_violation",
+      "severity": "critical",
+      "claim": "Mira detects Helios transmission using a simple market radio.",
+      "evidence_ids": [
+       "c4c6ea24-2963-409b-876f-4a5ccbf27ce8"
+      ],
+      "explanation": "Canon states that Helios transmissions are detectable ONLY with the specialized receiver configuration at the tower location; ordinary devices hear only silence. The draft depicts detection via a basic plastic radio bought at a market for 11 credits, directly violating this rule.",
+      "repair_hint": "Either change the device to a modified or unauthorized receiver near the tower's signal bleed (requiring proximity/special setup), or adjust canon in-world justification (not advised without author intent). For now, treat as early anomaly requiring later explanation."
+     }
+    ],
+    "repairAttempts": 2,
+    "unresolved": 1,
+    "draft": "Mira duduk di mejanya di kantor kantoran kota, tengah menyelesaikan laporan administrasi pagi itu. Suasana tenang, hanya occasionally interrupted by the distant hum of traffic dan occasional ring of a phone dari meja lain. Di sudut meja, sebuah radio sederhana ditempatkan — bahan plastik kusam, antena kecil tegak, tanpa label merek yang jelas. Dia membelinya kemarin dari seorang pedagang di pasar "
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "issue_detected": true,
+     "issue_type_match": true
+    },
+    "passed": 2,
+    "applicable": 2
+   }
+  },
+  {
+   "id": "g1-signature-repair",
+   "category": "generation-repair",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [
+     {
+      "type": "canon_contradiction",
+      "severity": "high",
+      "claim": "Arka carrying and using a firearm despite established trauma-based avoidance.",
+      "evidence_ids": [
+       "a485da64-0710-4e2f-83b5-08059196c5c2"
+      ],
+      "explanation": "The draft shows Arka retrieving and pointing a pistol at Mira with calm determination. However, canon evidence states that Arka 'menolak dengan tangan yang gemetar' when offered a gun due to trauma from the 2045 robbery, establishing a pattern of firearm avoidance rooted in psychological trauma. While the draft attempts to frame this as a breaking point, the immediacy and composure with which Arka handles the weapon—pulling it from a concealed holster, switching off safety, aiming steadily—contradicts the established trauma response without sufficient depiction of psychological breakdown or internal struggle to justify the override.",
+      "repair_hint": "Depict Arka's hands visibly shaking, breath ragged, or voice cracking as he draws the gun—showing the act costs him immense psychological effort, aligning with his trauma. Alternatively, reveal he has been carrying it secretly for days due to escalating fear, making the action desperate but not sudden."
+     },
+     {
+      "type": "alive_dead_conflict",
+      "severity": "critical",
+      "claim": "Mira confronts Dr. Vale about Project Helios when he is already dead.",
+      "evidence_ids": [
+       "5dc2e681-21a2-4f7f-aed7-8762435396dc"
+      ],
+      "explanation": "The draft portrays Mira speaking to or seeking Dr. Vale as if he were present and responsive during her confrontation. However, canon establishes Dr. Elias Vale died on 2048-03-11, three weeks prior to the scene date of 2048-04-01. Since this scene occurs after his death, any interaction implying his living presence contradicts canon unless framed as hallucination, recording, or Mira's denial—and the draft treats him as a physically interactive party in the current moment.",
+      "repair_hint": "Revise the scene so Mira is not interacting with a living Dr. Vale. Instead, have her confront Arka directly upon finding his father's notes, expressing grief or frustration over his recent death, or show her attempting to contact him via comms before realizing no response will come due to his passing."
+     }
+    ],
+    "repairAttempts": 2,
+    "unresolved": 0,
+    "draft": "Berikut adalah versi yang telah diperbaiki dari draf Anda, sesuai dengan instruksi dan memperhatikan konsistensi kanon:\n\nLaboratorium bawah tanah guap gegugu sinar neon merah lalu dari lampu darurat yang kedip tidak teratur. Udara dingin dan berat, bercampur dengan bau minyak mesin dan sesuatu yang membasar—seperti logua yang telah lama tidak disentuh. Mira Voss berdiri di tengah ruang yang seharu"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "issue_detected": true,
+     "issue_type_match": true,
+     "repair_bounded": true,
+     "continuity_pass": true
+    },
+    "passed": 4,
+    "applicable": 4
+   }
+  },
+  {
+   "id": "g2-repair-knowledge-only",
+   "category": "generation-repair",
+   "arm": "pipeline",
+   "observation": {
+    "kind": "write",
+    "findings": [
+     {
+      "type": "knowledge_leak",
+      "severity": "critical",
+      "claim": "Mira mengetahui nama dan detail Project Helios pada 2045-08-19",
+      "evidence_ids": [
+       "23311a74-e617-4a43-b4f5-c01d2763ca7c",
+       "a485da64-0710-4e2f-83b5-08059196c5c2"
+      ],
+      "explanation": "Bukti menunjukkan bahwa pada 2045-08-19, Project Helios masih sangat awal (30% selesai), tidak ada uji coba lengkap, dan belum pernah diperkenalkan kepada siapapun selain Arka dan ayahnya. Mira baru diperkenalkan dua minggu sebelumnya sebagai staf administrasi dan tidak memiliki akses ke data proyek rahsia. Namun draft menyiratkan bahwa Mira membicarakan Project Helios dengan detail teknis spesifik (kalibrasi penerima sinyal, fasa pengujian, dugaan sejak bulan lalu) yang seharusnya tidak mungkin diketahuinya pada titik waktu tersebut.",
+      "repair_hint": "Ubah dialog Mira agar tidak mengacu pada Project Helios secara eksplisit, atau beri alasan plausibel bagaimana ia bisa mengetahuinya (misalnya: ia menyodoki dokumen, atau memiliki latar belakang yang belum terungkap). Alternatifnya, geser scene_story_time ke setelah 2048-03-02 bila ingin mempertahankan pengetahuan Mira."
+     },
+     {
+      "type": "timeline_contradiction",
+      "severity": "high",
+      "claim": "Mira claiming knowledge of signal anomalies from 'bulan lalu' ( pertengahan Juli 2045)",
+      "evidence_ids": [
+       "23311a74-e617-4a43-b4f5-c01d2763ca7c"
+      ],
+      "explanation": "Menurut bukti, pada pertengahan Juli 2045 (sekitar satu bulan sebelum 19 Agustus 2045), Proyek Helios baru dalam sketsa awal, belum ada satu rangkaian uji coba yang selesai, belum ada alat yang bisa mendeteksi anomalistik, dan belum ada sinyal yang dapat dianggap sebagai bukti dari proyek tersebut. Pernyataan Mira tentang 'sinyal aneh tadi' dan dugaan sejak bulan lalu berkontravensi dengan fakta bahwa tidak ada aktivitas deteksi apa pun yang terjadi sebelum Maret 2048.",
+      "repair_hint": "Hapus referensi ke 'sinyal aneh tadi' atau 'dugaan sejak bulan lalu'. Ganti dengan pernyataan yang lebih ambigu dan berbasis observasi umum (misalnya: 'Aku noticed ada aktivitas tidak biasa di lab akhir-akhir ini')."
+     },
+     {
+      "type": "relationship_inconsistency",
+      "severity": "high",
+      "claim": "Mira berinteraksi dengan Arka seolah ia sudah lama mengenalnya dan mengetahui riwayat pribadinya, termasuk trauma senjata api.",
+      "evidence_ids": [
+       "0279068e-c807-4e2a-9743-c65b82b7b42e",
+       "a485da64-0710-4e2f-83b5-08059196c5c2"
+      ],
+      "explanation": "Bukti menunjukkan bahwa Mira belum mengetahui asal trauma senjata api Arka hingga 2048-03-04, dan pertama kali mereka diperkenalkan sebagai kolega pada 2048-03-02. Tidak ada bukti bahwa mereka saling kenal sebelum itu. Pada 2045-08-19, Mira masih bukan staf administrasi di laboratorium Vale, dan belum pernah diperkenalkan pada Arka.",
+      "repair_hint": "Ubahlah interaksi Mira-Arka menjadi pertama kali mereka bertemu, atau beri alasan khusus (misalnya: Mira adalah anak tukang bersih yang sering di lihat Arka, atau ada flashback pertemuan awal yang belum terdokumentasi). Jangan anggap mereka sudah memiliki sejarah interaksi sebelum 2048-03-02."
+     }
+    ],
+    "repairAttempts": 2,
+    "unresolved": 0,
+    "draft": "Di laboratorium bawah tanah pada tanggal 19 Agustus 2045, Mira Voss duduk di sisi meja kerja sementara Arka Vale berdiri di dekat jendela, melihat orang tuanya bekerja.\n\nArah pandangan Arka tetap menempel pada silhuet ayahnya—Dr. Elias Vale—that sedang membalut luka di tubuhnya dengan gerakan pelan namun terburu-buru. Luka dari perampok bersenjata masih terlihat merah muda di bawah kain putih, tap"
+   },
+   "rubric": {
+    "ran": true,
+    "checks": {
+     "issue_detected": true,
+     "issue_type_match": true,
+     "repair_bounded": true,
+     "continuity_pass": true
+    },
+    "passed": 4,
+    "applicable": 4
+   }
+  }
+ ]
+}

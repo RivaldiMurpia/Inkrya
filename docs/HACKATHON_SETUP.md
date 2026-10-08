@@ -14,8 +14,30 @@ The live Inkrya project (`ecurjotykfqiejrpczdm`) already has every migration app
 6. `database/memory-phase5.sql` — `canon_proposals` + canon RPCs (`canon_update_phase5`).
 7. `database/doctor-phase6.sql` — `ai_generations.action` gains `'doctor'` (`doctor_action_phase6`).
 8. `database/phase7-research.sql` — `ai_generations.action` gains `'research'` (`research_action_phase7`) and the Tavily credit meter RPC (`research_credit_usage_phase7`).
+9. `database/eval-fixture-phase8.sql` then `database/eval-fixture-phase8-canon.sql` — the synthetic evaluation fixture corpus (Phase 8). **Three-step apply, in order:** apply the base file (`eval_fixture_phase8_base`), call `public.process_memory(<fixture id>)` as the owner until it returns `processed:false` (this is the real chunking path), then apply the canon file (`eval_fixture_phase8_canon`). The canon file's joins require the chunk rows the middle step creates.
 
 Steps 5, 7 and 8 discover and replace the auto-named action CHECK constraint; on a fresh database run them in this order or the later one finds the constraint the earlier one already widened (idempotent outcome either way). Check RLS advisors after applying.
+
+## Evaluation (Phase 8) — how to re-run
+
+The fixture project id is `bbbbbbbb-bbbb-4bbb-8bbb-000000000001` (`Eval Fixture — The Last Signal`), owned by the standing test account. Every step below uses that account; nothing here touches the owner's own projects.
+
+```bash
+npm ci
+# .env.local needs NEBIUS_API_KEY (baseline arm) and EVAL_PASSWORD (test account).
+source .e2e_eval_env.sh        # INKRYA_PREVIEW_URL, EVAL_PASSWORD, VERCEL_BYPASS_SECRET
+node --env-file=.env.local scripts/eval-build-context.mjs   # refresh the guardian context
+node --env-file=.env.local --experimental-strip-types scripts/eval-runner.mjs \
+  --arm both --bypass "$VERCEL_BYPASS_SECRET"
+```
+
+The runner writes `qa/eval/results-<date>-both.json`. Upload the dataset to LangSmith with
+`node --env-file=.env.local scripts/eval-upload-langsmith.mjs` (exits `SKIPPED_NO_KEY` when
+`LANGSMITH_API_KEY` is absent — the report then records repo-only).
+
+A Vercel bypass link expires after ~24 hours: mint a fresh one, fetch the preview root with
+`?_vercel_share=<token>` once, and save the `_vercel_jwt` cookie. The runner sends it as a
+`Cookie` header. Without it every request is intercepted by deployment protection.
 
 ## 1. Obtain and configure credentials
 
