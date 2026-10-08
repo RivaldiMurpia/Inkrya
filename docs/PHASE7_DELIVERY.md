@@ -85,20 +85,26 @@ before the next one, so a mid-run failure still meters what was spent.
 
 ## Verification matrix
 
-Filled in by Task 12 (live E2E). Placeholder rows are marked PENDING until then.
+Live E2E on 2026-10-08, executed by the owner's standing automated test account
+(`e2e-analyze@example.com`, exempt from the LLM quota by instruction) against the deployed
+preview of commit `d33518d` (`inkrya-ifl49tv74`), plus an in-browser pass over the real UI.
 
 | Check | Result |
 |---|---|
-| Unit suite (`npm run test:unit`) | PASS — 158 tests, up from 111 |
+| Unit suite (`npm run test:unit`) | PASS — 159 tests, up from 111 (10 Tavily client, 12 validator, 10 budget, 12 pipeline/trace, 8 panel) |
 | Typecheck (non-incremental) | PASS |
 | Production build lists `ƒ /api/research` | PASS |
 | Migration `research_action_phase7` applied; CHECK lists `research`; a junk action still raises 23514 | PASS |
 | Migration `research_credit_usage_phase7` applied; RPC returns the seeded credit sum; a foreign project raises `FORBIDDEN`; `anon` has no EXECUTE | PASS |
-| Live research run on a real-world topic (test account, deployed preview) | PENDING |
-| Meter independence: the run's row carries both `tavily_credits` and model token counts; the credit RPC rises by exactly the run's credits while the LLM quota rises by one | PENDING |
-| Canon isolation asserted by SQL: canon table counts and statuses unchanged, `canon_proposals` gains no row | PENDING |
-| Failure paths: missing key → 503; spent credits still recorded on a failed run; user limit → 429 with real numbers | PENDING |
-| Panel renders notes, sources, credit line, timestamp; LangSmith shows the `research-agent` LLM run and the `tavily-search` tool run, metadata only | PENDING |
+| Live research run on a real-world topic (Javanese coastal fisheries 2048; Jakarta transport 2049; Bandung rainfall — via panel and API) | PASS — 5 real runs, each 3 queries, 14–15 sources, 3–6 notes, every citation resolving, every URL http(s), ~17–20 s per run |
+| Meter independence | PASS — every row carries BOTH `tavily_credits=3` and model tokens (input 3256–5894, output 852–1227); after 5 runs the RPC reads 15/24 user credits while the LLM meter shows 11 rows in 24h — two different meters |
+| Canon isolation asserted by SQL | PASS — after every run the trap project's `story_facts`/`timeline_events`/`character_knowledge`/`canon_proposals` all stayed at 0 rows |
+| Failure paths: validation (404 unknown project, 400 short topic); user limit → 429 with real numbers | PASS — after seeding a synthetic 22-credit row the meter returned `429 {"error":"Kuota riset web kamu tersisa 0 kredit dari 3 yang dibutuhkan satu riset. Coba lagi besok."}`; probe row deleted after the test |
+| **Bug found live:** PostgREST wraps a set-returning function in an array and stringifies bigint, so the original route read `user_credits_24h` as undefined and the meter never refused | FIXED — `creditUsageRow` normaliser added (unit-tested), redeployed, 429 reproduced on the fixed deployment; caught by this exact probe before any user could hit it |
+| Panel renders in a real browser (Orca embedded browser): nav "Riset Tavily", topic submit, notes with citation numbers, source links `rel="noopener noreferrer"`, credit line "Riset ini memakai 3 kredit Tavily. Sisa kuota riset harianmu 9 kredit.", isolation notice, no percentage anywhere | PASS |
+| Honest no-results path | Verified at unit level (pipeline skips the notes call, credits still metered); no live run produced zero results — Tavily returned results for every real query |
+| LangSmith | LLM runs trace via `workflow:'research-agent'` (metadata-only allowlist); the `tavily-search` tool run ships counts only. Live dashboard spot-check not performed — no local `LANGSMITH_API_KEY` in the working environment; tracing state is recorded per row |
+| Missing-key 503 path | Verified by code path (fail-closed `researchConfig`); the key is present in Vercel so it was not exercised live |
 
 ## Bugs found during implementation
 
@@ -121,6 +127,13 @@ Filled in by Task 12 (live E2E). Placeholder rows are marked PENDING until then.
    `AbortSignal.any([AbortSignal.timeout(...), callerSignal])`.
 7. **LangSmith rejects a non-UUID run id** on `updateRun`, so the derived tool-run id is a
    SHA-256 hash shaped into a UUID rather than `<generationId>-tool`.
+8. **PostgREST shape mismatch disabled the meter (live E2E, highest severity)** — a
+   set-returning RPC arrives as an ARRAY with bigint values as strings, so the route's
+   `usage?.user_credits_24h` read `undefined` and `researchCreditBudget` always saw 0 used.
+   The limit probe against a real deployment returned 200 where it must have returned 429.
+   Fixed with the unit-tested `creditUsageRow` normaliser; the 429 was then reproduced on the
+   redeployed preview. This is exactly the class of failure the worst-case design was meant
+   to prevent — the probe step was what caught it.
 
 ## Honest limits
 
