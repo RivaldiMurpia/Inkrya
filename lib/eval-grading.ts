@@ -5,7 +5,11 @@
 import type {GuardianIssue} from './agent-validation.ts';
 
 export type AskObservation={kind:'ask';status:string;citations:{chapter_id:string;title:string}[];answer:string;error?:string};
-export type WriteObservation={kind:'write';findings:GuardianIssue[];repairAttempts:number;unresolved:number;draft:string;error?:string};
+// repairAttempts is null for an arm that has NO repair loop (the baseline): the key then
+// scores null rather than a trivially-true pass, because a budget check that cannot fail
+// measures nothing. The baseline's unresolved count IS real (the guardian flagged its draft
+// and nothing repaired it), so continuity_pass still reflects the baseline honestly.
+export type WriteObservation={kind:'write';findings:GuardianIssue[];repairAttempts:number|null;unresolved:number;draft:string;error?:string};
 export type Observation=AskObservation|WriteObservation;
 export type Rubric={ran:boolean;checks:Record<string,boolean|null>;passed:number;applicable:number};
 
@@ -43,23 +47,32 @@ function buildChecks(expected:Expected,observation:Observation):Record<string,bo
   checks.citation_correct=chapterMatched(citations,expected.chapters[0]);
  }
  if(expected.mustMention?.length)checks.must_mention=expected.mustMention.every(m=>answer.includes(m));
- if(expected.answerMustNotContain?.length)checks.answer_must_not_contain=!expected.answerMustNotContain.some(m=>answer.includes(m));
+ if(expected.answerMustNotContain?.length){
+  // Cross-kind guard: this key checks the ask ANSWER text; a write observation has none, so
+  // the key cannot apply and scores null instead of a trivially-true pass.
+  checks.answer_must_not_contain=isWrite?null:!expected.answerMustNotContain.some(m=>answer.includes(m));
+ }
  if(expected.issue_types?.length){
   const types:string[]=findings.map(f=>f.type);
-  checks.issue_detected=types.length>0;
+  // Cross-kind guard, same rule: an ask observation has no guardian, so issue keys are null.
+  checks.issue_detected=isWrite?types.length>0:null;
   // At least one planted type must be reported; flagging for unrelated reasons does not pass.
-  checks.issue_type_match=expected.issue_types.some(t=>types.includes(t));
+  checks.issue_type_match=isWrite?expected.issue_types.some(t=>types.includes(t)):null;
  }
  if(expected.forbidden_issue_types?.length){
+  // Cross-kind guard: a false-positive expectation against an ask observation (which has no
+  // guardian) would otherwise fail open — trivially true forever, corrupting the count while
+  // looking like earned restraint. A check that CANNOT apply to this kind scores null.
   const types:string[]=findings.map(f=>f.type);
-  checks.false_positive_avoided=!expected.forbidden_issue_types.some(t=>types.includes(t));
+  checks.false_positive_avoided=isWrite?!expected.forbidden_issue_types.some(t=>types.includes(t)):null;
  }
- if(expected.max_repair_attempts!==undefined&&isWrite){
-  checks.repair_bounded=observation.repairAttempts<=expected.max_repair_attempts;
-  // A continuity case passes when the graph ends with zero unresolved issues — the honest
-  // "flagged but could not repair" outcome scores 0 here and is judged by issue_type_match
-  // instead; unresolved>0 with no findings at all would mean a silent miss.
-  checks.continuity_pass=observation.unresolved===0;
+ if(expected.max_repair_attempts!==undefined){
+  // repairAttempts null = the arm has no repair loop, so a budget pass would be unearned;
+  // report null (excluded from applicable) rather than true-by-construction.
+  const repairAttempts=isWrite?observation.repairAttempts:null;
+  const unresolved=isWrite?observation.unresolved:null;
+  checks.repair_bounded=repairAttempts===null?null:repairAttempts<=expected.max_repair_attempts;
+  checks.continuity_pass=unresolved===0;
  }
  return checks;
 }

@@ -122,7 +122,12 @@ one is an unrelated provider blip (the same case returned 200 on an immediate re
 | story-time | 1 | 0/4 |
 | knowledge | 1 | 0/4 |
 | continuity | 4 | 8/8 |
-| generation-repair | 2 | 5/8 |
+| generation-repair | 2 | 3/6 |
+
+The baseline's `generation-repair` denominator is 6, not 8: an arm with **no repair loop**
+cannot earn a repair-budget check, so `repair_bounded` scores `null` for the baseline and is
+excluded from the count rather than passing by construction (adversarial-review fix — an
+earlier draft scored it `true` for both arms and overstated the baseline by two passes).
 
 
 ### Baseline vs pipeline (the demo-spec §13 claim)

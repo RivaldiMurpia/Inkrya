@@ -118,12 +118,14 @@ async function baselineAsk(item){
 
 async function baselineWrite(item){
  const draft=await baselineCall(item.input.instruction,'tulis adegan fiksi dalam bahasa Indonesia, satu paragraf.');
- if(!draft)return {kind:'write',findings:[],repairAttempts:0,unresolved:0,draft:'',error:'BASELINE_FAILED'};
+ if(!draft)return {kind:'write',findings:[],repairAttempts:null,unresolved:0,draft:'',error:'BASELINE_FAILED'};
  // Judged by the SAME guardian the pipeline uses (a single continuity call over the fixture's
- // real context), so a baseline that violates canon is measured, not assumed.
+ // real context), so a baseline that violates canon is measured, not assumed. repairAttempts
+ // stays null: the baseline has no repair loop, and the grader scores that key null instead
+ // of a true-by-construction pass.
  const findings=await guardianCall(item.input.instruction,draft);
- if(findings===null)return {kind:'write',findings:[],repairAttempts:0,unresolved:0,draft,error:'BASELINE_GUARDIAN_FAILED'};
- return {kind:'write',findings,repairAttempts:0,unresolved:findings.length,draft};
+ if(findings===null)return {kind:'write',findings:[],repairAttempts:null,unresolved:0,draft,error:'BASELINE_GUARDIAN_FAILED'};
+ return {kind:'write',findings,repairAttempts:null,unresolved:findings.length,draft};
 }
 
 let nebius=null;

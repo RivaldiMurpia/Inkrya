@@ -5,74 +5,86 @@
   "retrieval:pipeline": {
    "cases": 6,
    "ran": 5,
+   "errored": 1,
    "passed": 16,
    "applicable": 16
   },
   "story-time:pipeline": {
    "cases": 4,
    "ran": 4,
+   "errored": 0,
    "passed": 7,
    "applicable": 16
   },
   "knowledge:pipeline": {
    "cases": 4,
    "ran": 4,
+   "errored": 0,
    "passed": 6,
    "applicable": 13
   },
   "false-positive:pipeline": {
    "cases": 3,
    "ran": 3,
+   "errored": 0,
    "passed": 3,
    "applicable": 3
   },
   "abstention:pipeline": {
    "cases": 1,
    "ran": 1,
+   "errored": 0,
    "passed": 0,
    "applicable": 1
   },
   "continuity:pipeline": {
    "cases": 4,
    "ran": 4,
+   "errored": 0,
    "passed": 6,
    "applicable": 8
   },
   "generation-repair:pipeline": {
    "cases": 2,
    "ran": 2,
+   "errored": 0,
    "passed": 6,
    "applicable": 8
   },
   "retrieval:baseline": {
    "cases": 2,
    "ran": 2,
+   "errored": 0,
    "passed": 0,
    "applicable": 6
   },
   "story-time:baseline": {
    "cases": 1,
    "ran": 1,
+   "errored": 0,
    "passed": 0,
    "applicable": 4
   },
   "knowledge:baseline": {
    "cases": 1,
    "ran": 1,
+   "errored": 0,
    "passed": 0,
    "applicable": 4
   },
   "continuity:baseline": {
    "cases": 4,
    "ran": 4,
+   "errored": 0,
    "passed": 8,
    "applicable": 8
   },
   "generation-repair:baseline": {
    "cases": 2,
    "ran": 2,
-   "passed": 5,
-   "applicable": 8
+   "errored": 0,
+   "passed": 3,
+   "applicable": 6
   }
  },
  "totals": {
@@ -946,7 +958,7 @@
       "repair_hint": "Adjust scene_story_time to a date before 2048-03-11 (e.g., 2048-03-10) to preserve canon, or reconceive Dr. Vale's appearance as non-physical (e.g., hallucination, archive)."
      }
     ],
-    "repairAttempts": 0,
+    "repairAttempts": null,
     "unresolved": 2,
     "draft": "Siang itu, suhu di ruang laboratorium bawah tanah telah naik tiga derajat celcius sejak Dr. Vale terakhir menentangku — atau lebih tepatnya, sejak aku menyadari bahwa dia tidak lagi hanya ilmuwan. Dia adalah salah satu arsitek dari kejahatan yang kita sembunyikan di balik nama “Proyek Helios”: mesin yang tidak hanya mentransfer energi matahari ke jaringan global, tetapi juga dapat memprogram respo"
    },
@@ -979,7 +991,7 @@
       "repair_hint": "Revise the scene to show Arka avoiding direct contact with firearms—perhaps using a tool or cloth at a distance, or having Mira handle the cleaning while he speaks, to align with his established trauma and refusal to touch weapons."
      }
     ],
-    "repairAttempts": 0,
+    "repairAttempts": null,
     "unresolved": 1,
     "draft": "Arka duduk rimbun di tepi pingsan kayu tua di halaman belakang rumah, cahaya matahari sore menyisir rambut keritingnya saat ia perlahan menggosok pipa laga pistolnya dengan kain katun bersih. Suaranya tenang, hampir seperti ngomong ke angin — \"Misi terakhir? Aku menyelinap ke gudang senjata di Zona Delta malam itu… tiga penjaga, semua pakai thermal scan, tapi aku pakai jas hujan berbahan gel yang "
    },
@@ -1011,7 +1023,7 @@
       "repair_hint": "Either change the scene date to before 11 March 2048, or remove Dr. Elias Vale from the scene and have another character deliver the chip."
      }
     ],
-    "repairAttempts": 0,
+    "repairAttempts": null,
     "unresolved": 1,
     "draft": "**Adegan Fiksi – 1 April 2048**\n\nSabtu pagi pada tanggal 1 April 2048, langit di atas Stasiun Helios memancarkan cahaya ungu-kehijauan yang hanya muncul setiap hari karena pancaran aurora buatan dari panel solaris orbit — sebuah jejak manusiawi di atas Bumi yang kini menjadi benteng ilmu pengetahuan terakhir. Di ruang serba guna stasiun, di mana bioluminesensi tanaman hidroponik melambai lembut di"
    },
@@ -1043,7 +1055,7 @@
       "repair_hint": "Ubah adegan sehingga Mira menggunakan perangkat khusus di lokasi menara, atau tampilkan bahwa radio biasa tersebut ternyata telah dimodifikasi secara tersembunyi sesuai konfigurasi khusus."
      }
     ],
-    "repairAttempts": 0,
+    "repairAttempts": null,
     "unresolved": 1,
     "draft": "Mira menatap radio bekas di meja kerja kecilnya — casing berkarat, dawai hilang, antenna ditempel dengan sehelai isolasi hitam — sambil perlahan memutar knob frekuensi seperti mencari bisikan antar-galaksi. Kantor jejakannya bersih, tanpa lampu neon atau layar digital; hanya satu jendela terbuka menyisir angin kota malam yang menyebar bau asap dan rempek jalan. Tapi di balik semua itu — di balik k"
    },
@@ -1075,7 +1087,7 @@
       "repair_hint": "Either change the scene date to before 2048-03-11, or remove Dr. Vale's dialogue and presence. If retaining the revelation, consider having Mira or Arka discover a recording, message, or artifact that contains his words."
      }
     ],
-    "repairAttempts": 0,
+    "repairAttempts": null,
     "unresolved": 1,
     "draft": "Mira menatap Dr. Vale dengan mata yang tak bergetar, meskipun atmosfer ruang rahasia di bawah Bunker Helios menetes dingin seperti esopropylalkohol—wangi, tajam, dan siap terbakar. “Kamu tahu bahwa Proyek Helios bukan hanya tentang koloni Mars,” katanya, suaraanya rendah tapi menebas. “Ini senjata orbit. Kamu tidak sekadar mencari energi bersih—kamu membangun pahlawan yang bisa menebak seluruh ben"
    },
@@ -1084,11 +1096,11 @@
     "checks": {
      "issue_detected": true,
      "issue_type_match": false,
-     "repair_bounded": true,
+     "repair_bounded": null,
      "continuity_pass": false
     },
-    "passed": 2,
-    "applicable": 4
+    "passed": 1,
+    "applicable": 3
    }
   },
   {
@@ -1120,7 +1132,7 @@
       "repair_hint": "Adjust Mira’s claim to reflect a recent discovery—e.g., 'since last week' or 'since the corrupted meteorological data surfaced'—to align with the 2048 timeline. Alternatively, if retroactive knowledge is intended, add supporting evidence (not currently present) to justify earlier awareness."
      }
     ],
-    "repairAttempts": 0,
+    "repairAttempts": null,
     "unresolved": 2,
     "draft": "Mira duduk dengan santai di kursi kerja Arkas — tangan kanannya bersantun atas meja kaca, jari-jarinya menoreh aliran kecil debu yang tak terlihat — sambil menatap dia seperti sedang membaca sebuah buku yang sudah pernah ia baca puluhan kali sebelumnya. “Project Helios,” ucapnya dengan nada tenang, hampir bisikan, tapi setiap kata jatuh seperti macan tutul melanda rumput, “bukan hal baru bagiku. A"
    },
@@ -1129,12 +1141,13 @@
     "checks": {
      "issue_detected": true,
      "issue_type_match": true,
-     "repair_bounded": true,
+     "repair_bounded": null,
      "continuity_pass": false
     },
-    "passed": 3,
-    "applicable": 4
+    "passed": 2,
+    "applicable": 3
    }
   }
- ]
+ ],
+ "regraded_with": "eval-grading cross-kind nulls + no-repair null (post-review fix)"
 }

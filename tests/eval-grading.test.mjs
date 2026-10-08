@@ -87,9 +87,32 @@ test('a case with no expected keys reports no checks',()=>{
 test('baseline and pipeline observations are graded by the identical rubric shape',()=>{
   const expected={issue_types:['knowledge_leak'],max_repair_attempts:2};
   const pipeline=gradeCase(expected,write({findings:[finding('knowledge_leak')],repairAttempts:0,unresolved:1}));
-  const baseline=gradeCase(expected,write({findings:[],repairAttempts:0,unresolved:0}));
+  const baseline=gradeCase(expected,write({findings:[],repairAttempts:null,unresolved:0}));
   assert.deepEqual(Object.keys(pipeline.checks),Object.keys(baseline.checks));
   // identical detector, different verdicts
   assert.equal(pipeline.checks.issue_type_match,true);
   assert.equal(baseline.checks.issue_type_match,false);
+});
+
+test('an arm with no repair loop scores repair_bounded null, never a true-by-construction pass',()=>{
+  const expected={issue_types:['knowledge_leak'],max_repair_attempts:2};
+  const noRepair=gradeCase(expected,write({findings:[finding('knowledge_leak')],repairAttempts:null,unresolved:1}));
+  assert.equal(noRepair.checks.repair_bounded,null);
+  assert.equal(noRepair.checks.continuity_pass,false); // unresolved>0 is real and honest
+  assert.equal(noRepair.applicable,3); // repair_bounded excluded from the count
+  const withRepair=gradeCase(expected,write({findings:[finding('knowledge_leak')],repairAttempts:1,unresolved:0}));
+  assert.equal(withRepair.checks.repair_bounded,true);
+  assert.equal(withRepair.applicable,4);
+});
+
+test('cross-kind expectations score null instead of a trivially-true pass',()=>{
+  // A write observation has no answer text, so an answer-side key cannot apply.
+  const writeCase=gradeCase({answerMustNotContain:['Project Helios']},write());
+  assert.equal(writeCase.checks.answer_must_not_contain,null);
+  // An ask observation has no guardian, so an issue-side key cannot apply.
+  const askCase=gradeCase({forbidden_issue_types:['alive_dead_conflict']},ask());
+  assert.equal(askCase.checks.false_positive_avoided,null);
+  const askIssue=gradeCase({issue_types:['knowledge_leak']},ask());
+  assert.equal(askIssue.checks.issue_detected,null);
+  assert.equal(askIssue.checks.issue_type_match,null);
 });
