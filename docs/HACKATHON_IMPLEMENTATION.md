@@ -2,7 +2,7 @@
 
 Updated: 2026-10-07. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist.
 
-## Current increment: Phases 2–6 delivered; Phase 1 prose gate still open
+## Current increment: Phases 2–8 delivered; Phase 1 prose gate still open
 
 Phase 1 Indonesian prose acceptance remains **INCOMPLETE** (Super and the Ultra/Lightning
 Writer pilots failed the four-case corpus). Phases **2, 3, 4, 5 and 6 are delivered and
@@ -73,10 +73,10 @@ Writers still review/copy suggestions; no agent writes manuscript/canon automati
 | 5 Canon Update | **Delivered** — `canon` node after critic proposes fact/event/knowledge from the final draft; `canon_proposals` table; explicit Setujui/Edit/Tolak; atomic revision-safe batch acceptance (`decide_canon_proposals`), per-generation dedup, live retrieval re-indexing verified; headless live E2E on Preview passed; see `PHASE5_DELIVERY.md` | cross-generation dedup and `CONFLICTED`/retraction workflows deferred |
 | 6 Story Doctor | **Delivered** — `POST /api/memory {action:'doctor'}` builds a whole-manuscript package, runs a deterministic check (forgotten characters) plus one bounded AI semantic pass (plot holes, timeline, knowledge, relationship drift, world rules, POV, unresolved threads), fail-closed evidence-id validation, measured coverage with explicit skipped checks and no health scores; report persisted in AI history and re-renderable; 1 run = 1 quota slot; live E2E on The Last Signal passed; see `PHASE6_DELIVERY.md` | deterministic engine covers one kind only; thread tracking rides on summaries; no per-finding resolve state |
 | 7 Tavily | Delivered (`PHASE7_DELIVERY.md`) | Intentional opt-in research, bounded queries, citations, isolation from fictional canon, trace tool calls |
-| 8 Evaluation | Synthetic unit/DB alpha tests | LangSmith datasets, baseline comparison, retrieval/continuity/knowledge metrics; Toloka optional |
+| 8 Evaluation | Delivered (`PHASE8_DELIVERY.md`) — synthetic fixture corpus with known accepted canon, 24-case dataset, deterministic grader, two-arm live run | LangSmith dataset upload (repo-only until the key is local), repeat-run variance, chapter-reference retrieval recall |
 | 9 Submission | Existing hosted alpha | Original The Last Signal corpus, accessible demo, public repository/license, before/after history, screenshots, E2E, demo video and submission |
 
-Do not claim evaluation datasets, full-chapter summaries, or hackathon readiness in this increment. LangGraph and the Continuity Guardian are implemented as of Phase 4; Story Doctor as of Phase 6; Tavily research as of Phase 7 — claim them only with the limits recorded in `PHASE2_3_4_DELIVERY.md`, `PHASE5_DELIVERY.md`, `PHASE6_DELIVERY.md` and `PHASE7_DELIVERY.md`.
+Do not claim full-chapter summaries or hackathon readiness in this increment. LangGraph and the Continuity Guardian are implemented as of Phase 4; Story Doctor as of Phase 6; Tavily research as of Phase 7; evaluation datasets as of Phase 8 — claim them only with the limits recorded in `PHASE2_3_4_DELIVERY.md`, `PHASE5_DELIVERY.md`, `PHASE6_DELIVERY.md`, `PHASE7_DELIVERY.md` and `PHASE8_DELIVERY.md`.
 
 ## Decisions that prevent coding ambiguity
 

@@ -1,22 +1,24 @@
 # Inkrya implementation checkpoint
 
-## Phases 2–7 delivered — 2026-10-08 (current authority)
+## Phases 2–8 delivered — 2026-10-08 (current authority)
 
 The Hackathon PRD remains the product authority. Phases 2 (pgvector hybrid retrieval), 3 (Ask
-Your Story), 4 (Agentic Writing), 5 (Canon Update), 6 (Story Doctor) and 7 (Tavily Research)
-are delivered and
-verified on Preview; see `docs/PHASE2_3_4_DELIVERY.md`, `docs/PHASE5_DELIVERY.md`,
-`docs/PHASE6_DELIVERY.md` and `docs/PHASE7_DELIVERY.md`. Phase 6 adds a whole-manuscript
-Story Doctor (`POST /api/memory {action:'doctor'}`): a deterministic check plus one bounded
-AI pass, every finding evidence-resolvable, measured coverage with no health scores, 1 run =
-1 quota slot, report persisted in AI history. Phase 7 adds an opt-in research panel
+Your Story), 4 (Agentic Writing), 5 (Canon Update), 6 (Story Doctor), 7 (Tavily Research)
+and 8 (Evaluation) are delivered and verified on Preview; see `docs/PHASE2_3_4_DELIVERY.md`,
+`docs/PHASE5_DELIVERY.md`, `docs/PHASE6_DELIVERY.md`, `docs/PHASE7_DELIVERY.md` and
+`docs/PHASE8_DELIVERY.md`. Phase 7 adds an opt-in research panel
 (`POST /api/research`): a bounded query plan, at most 3 Tavily searches at pinned basic
 depth, citation-validated notes in Indonesian, a separate Tavily credit meter, and no path
-from research output to any canon table. Live E2E on The Last Signal and on a seeded trap
-project passed; all synthetic artifacts reverted. Applied live migrations since the last
-checkpoint: `canon_update_phase5`, `doctor_action_phase6`, `research_action_phase7` and
-`research_credit_usage_phase7` — never reapply. Phase 1 Indonesian prose acceptance remains
-the open gate; Phase 8 (Evaluation) and 9 (Submission) remain.
+from research output to any canon table. Phase 8 adds the evaluation layer: a synthetic
+fixture corpus with a known accepted canon state (also the Phase 9 demo project), a 24-case
+dataset over six rubric categories, a deterministic no-LLM-judge grader, and a two-arm live
+run (pipeline vs context-free baseline scored by the same guardian). The evaluation surfaced
+and fixed a real product bug: one paraphrased citation quote used to discard the whole Ask
+answer as a deterministic 503 (`validateAnswer` now re-anchors quotes per claim).
+Applied live migrations since the last checkpoint: `canon_update_phase5`,
+`doctor_action_phase6`, `research_action_phase7`, `research_credit_usage_phase7`,
+`eval_fixture_phase8_base` and `eval_fixture_phase8_canon` — never reapply.
+Phase 1 Indonesian prose acceptance remains the open gate; Phase 9 (Submission) remains.
 
 ## Hackathon upgrade — 2026-09-19 (historical)
 

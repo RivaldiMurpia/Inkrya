@@ -95,7 +95,7 @@ project above, executed by the standing test account. Raw data: `qa/eval/results
 | abstention | 1 | 1 | 0/1 |
 | generation-repair | 2 | 2 | 6/8 |
 
-**4 continuity + 2 generation-repair cases = 33 of 34 observations ran; 1 transient 503.**
+**33 of 34 observations ran (24 pipeline + 10 baseline); the one error is a transient 503.**
 The 503 rate fell from 4/24 before the `validateAnswer` fix to 1/34 after — the remaining
 one is an unrelated provider blip (the same case returned 200 on an immediate re-probe).
 
