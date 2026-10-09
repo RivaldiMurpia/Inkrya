@@ -1,0 +1,102 @@
+{
+ "items": [
+  {
+   "id": "pair-0-continue-radio",
+   "story_context": "Mira tiba di Stasiun Aruna pada pukul tujuh malam. Ia menyimpan kunci kuningan di laci meja radio. Damar belum mengetahui lokasi kunci itu. Mira mendengar tiga ketukan melalui radio.",
+   "text_left": "Mira duduk di bangku dekat meja radio ketika suara tiga ketukan tiba‑tiba terdengar melalui speaker tua. Ia menoleh cepat, menahan napas, lalu menekan tombol volume sedikit. Suara itu berulang, keras, seolah seseorang mengetuk pintu ruang kontrol. Tangannya menggenggam tepi laci, mengingat kunci kuningan yang masih tersembunyi di dalamnya. Damar masih berada di luar, belum tahu di mana kunci itu disimpan.",
+   "text_right": "Mira menekan tombol radio di Stasiun Aruna, dan tiga ketukan pelan terdengar dari speaker. Ia menghitung jeda di antara bunyi itu, mencocokkannya dengan pola yang pernah ia pelajari. Tangannya berhenti di atas laci meja, tempat kunci kuningan tersimpan rapi. Damar masih berada di ruang tunggu, dan Mira memastikan laci itu tetap tertutup sampai ia memutuskan sendiri kapan kunci tersebut akan diperlihatkan."
+  },
+  {
+   "id": "pair-0-rewrite-radio",
+   "story_context": "Mira sendirian di ruang radio Stasiun Aruna. Kunci kuningan berada di saku jaketnya. Radio di meja hanya berdengung pelan.",
+   "text_left": "Mira melangkah ke ruang radio Stasiun Aruna. Kunci kuningan terasa dingin di saku jaketnya, menekan sisi pahanya setiap kali ia bergerak. Radio di meja berdengung pelan, suara statis yang tidak membawa pesan apa pun. Ia menatap tombol-tombol di panel, lalu mengalihkan pandangan ke jendela. Tangannya tetap di saku, menggenggam kunci itu erat-erat, seolah menahan sesuatu yang belum ingin ia lepaskan.",
+   "text_right": "Mira melangkah masuk ke ruang radio yang remang, merasakan detak jantungnya berdegup cepat. Kunci kuningan masih tersembunyi di saku jaketnya, berkilau samar di antara kain. Di atas meja, radio hanya berdengung pelan, suara bergetar menembus keheningan, menambah rasa waspada yang membuatnya menahan napas di dalam ruangan yang gelap."
+  },
+  {
+   "id": "pair-0-continue-menara",
+   "story_context": "Nala dan Raka berjaga di menara pelabuhan. Lampu keempat di ujung dermaga padam, dan Nala berusaha memberi tahu Raka. Surat untuk penjaga kapal tetap di bawah bangku dekat pintu menara.",
+   "text_left": "Nala menatap deretan lampu di ujung dermaga. Lampu keempat berkedip sekali, lalu padam. Ia menoleh ke arah Raka yang sedang memeriksa peta di meja kecil. \"Raka, lampu keempat mati,\" katanya pelan. Raka mengangkat kepala, menatap ke luar jendela. Keduanya terdiam sejenak. Surat untuk penjaga kapal masih tersimpan di bawah bangku dekat pintu menara, belum tersentuh.",
+   "text_right": "Nala menatap lampu keempat yang tiba‑tiba redup, cahaya terakhir di ujung dermaga memudar. Ia mengangkat tangan, berusaha menembus angin, memanggil Raka dengan suara serak. “Raka, lampu itu padam,” katanya, namun suara teredam oleh deru laut. Raka menoleh, mata masih menelusuri tiga lampu yang masih bersinar, belum menyadari kegelapan yang mengintai."
+  },
+  {
+   "id": "pair-0-rewrite-surat",
+   "story_context": "Hujan terdengar di atap menara pelabuhan. Nala menunggu di dekat jendela, Raka duduk di lantai, dan surat yang belum mereka baca masih di bawah bangku.",
+   "text_left": "Hujan terdengar di atap menara, suaranya pelan dan merata. Nala berdiri di dekat jendela, menatap tetesan air yang mengalir di kaca. Raka duduk di lantai, bersandar pada dinding. Surat yang belum mereka baca masih tersimpan di bawah bangku, di antara bayangan yang redup. Keduanya diam, membiarkan hujan mengisi ruang yang sunyi.",
+   "text_right": "Hujan menetes tenang di atap menara, suaranya mengalun lembut. Rintik itu menetes perlahan, menyejukkan ruangan. Nala berdiri menunggu di dekat jendela, matanya menatap kaca yang berkabut. Raka duduk bersila di lantai, mengusap‑usap lututnya sambil menunggu. Surat yang masih tergeletak di bawah bangku belum tersentuh, belum terbaca oleh keduanya. Suasana tetap hening, hanya suara tetesan yang mengisi ruang. Mereka menahan napas, menunggu saat yang tepat."
+  },
+  {
+   "id": "pair-1-continue-radio",
+   "story_context": "Mira tiba di Stasiun Aruna pada pukul tujuh malam. Ia menyimpan kunci kuningan di laci meja radio. Damar belum mengetahui lokasi kunci itu. Mira mendengar tiga ketukan melalui radio.",
+   "text_left": "Mira menoleh ke arah radio ketika terdengar tiga ketukan berirama lewat speaker. Suara itu menggema di ruang stasiun yang sepi, menimbulkan rasa waspada. Ia menutup laci tempat kunci kuningan, menggeser jarinya di atas logam dingin. Damar masih berada di luar, belum tahu di mana kunci itu disembunyikan. Mira menahan napas, menunggu sinyal selanjutnya. Dia menatap layar kecil yang berkedip, berharap petunjuk muncul.",
+   "text_right": "Mira menekan tombol radio di Stasiun Aruna, lalu tiga ketukan pendek terdengar dari speaker. Ia menghitung jeda di antara bunyi itu, mencocokkannya dengan pola yang pernah ia hafal. Tangannya berhenti di atas laci meja, tempat kunci kuningan tersimpan rapi. Damar masih berada di ruang sinyal di ujung peron, dan Mira memilih untuk tidak menyebutkan apa pun tentang kunci itu sampai ia yakin siapa yang mengirimkan kode tersebut."
+  },
+  {
+   "id": "pair-1-rewrite-radio",
+   "story_context": "Mira sendirian di ruang radio Stasiun Aruna. Kunci kuningan berada di saku jaketnya. Radio di meja hanya berdengung pelan.",
+   "text_left": "Mira melangkah masuk ke ruang radio yang remang, jantungnya berdebar di antara deru mesin. Ia meraba saku jaket, merasakan kunci kuningan dingin menempel. Di atas meja, radio bergetar pelan, hanya berdengung seperti napas yang tertahan di dalam ruangan. Setiap detik terasa menegangkan, namun ia tetap diam.",
+   "text_right": "Mira masuk ke ruang radio. Kunci kuningan masih di saku jaketnya, terasa dingin saat ia menekannya pelan. Radio di meja hanya berdengung, tidak ada suara lain yang keluar. Ia berdiri diam, menunggu sesuatu yang tidak kunjung datang. Jari-jarinya mengetuk tepi meja, lalu berhenti. Ruangan itu sunyi, dan dengung radio tetap sama, tidak berubah."
+  },
+  {
+   "id": "pair-1-continue-menara",
+   "story_context": "Nala dan Raka berjaga di menara pelabuhan. Lampu keempat di ujung dermaga padam, dan Nala berusaha memberi tahu Raka. Surat untuk penjaga kapal tetap di bawah bangku dekat pintu menara.",
+   "text_left": "Nala menoleh ke ujung dermaga, melihat lampu keempat tiba‑tiba redup dan padam. Ia mengangkat tangan, berteriak pelan agar Raka mendengar, namun angin laut menelan suaranya. Raka menoleh, mengernyit, lalu menatap kegelapan di sana. Nala mengulangi peringatan, menepuk bahu Raka, sambil mengingat surat yang tergeletak di bawah bangku dekat pintu menara.",
+   "text_right": "Nala menatap deretan lampu di ujung dermaga. Lampu keempat berkedip sekali, lalu padam. Ia menoleh ke arah Raka yang sedang memeriksa teropong di sudut menara. \"Raka, lampu keempat mati,\" katanya pelan. Raka mengangkat wajah, menatap ke luar jendela sebentar, lalu mengangguk. Surat untuk penjaga kapal masih tersimpan di bawah bangku dekat pintu, belum tersentuh siapa pun."
+  },
+  {
+   "id": "pair-1-rewrite-surat",
+   "story_context": "Hujan terdengar di atap menara pelabuhan. Nala menunggu di dekat jendela, Raka duduk di lantai, dan surat yang belum mereka baca masih di bawah bangku.",
+   "text_left": "Hujan terdengar di atap menara, suaranya pelan dan merata. Nala berdiri di dekat jendela, menatap butiran air yang mengalir di kaca. Raka duduk di lantai, bersandar pada dinding. Surat yang belum mereka baca masih tersimpan di bawah bangku, di antara bayangan yang redup. Keduanya diam, membiarkan hujan mengisi ruang yang sunyi.",
+   "text_right": "Hujan menetes tenang di atap menara, suaranya mengalun lembut. Nala berdiri menunggu di dekat jendela, matanya menatap kaca yang berembun. Raka duduk bersila di lantai, menunduk pada lantai kayu. Surat masih tergeletak di bawah bangku, belum tersentuh oleh keduanya. Kedua sahabat dengan sabar menunggu waktu yang tepat di antara rintik hujan."
+  }
+ ],
+ "manifest": {
+  "pair-0-continue-radio": {
+   "case": "continue-radio",
+   "run": 0,
+   "left": "gpt-oss-120b",
+   "right": "DeepSeek-V4-Flash-0731"
+  },
+  "pair-0-rewrite-radio": {
+   "case": "rewrite-radio",
+   "run": 0,
+   "left": "DeepSeek-V4-Flash-0731",
+   "right": "gpt-oss-120b"
+  },
+  "pair-0-continue-menara": {
+   "case": "continue-menara",
+   "run": 0,
+   "left": "DeepSeek-V4-Flash-0731",
+   "right": "gpt-oss-120b"
+  },
+  "pair-0-rewrite-surat": {
+   "case": "rewrite-surat",
+   "run": 0,
+   "left": "DeepSeek-V4-Flash-0731",
+   "right": "gpt-oss-120b"
+  },
+  "pair-1-continue-radio": {
+   "case": "continue-radio",
+   "run": 1,
+   "left": "gpt-oss-120b",
+   "right": "DeepSeek-V4-Flash-0731"
+  },
+  "pair-1-rewrite-radio": {
+   "case": "rewrite-radio",
+   "run": 1,
+   "left": "gpt-oss-120b",
+   "right": "DeepSeek-V4-Flash-0731"
+  },
+  "pair-1-continue-menara": {
+   "case": "continue-menara",
+   "run": 1,
+   "left": "gpt-oss-120b",
+   "right": "DeepSeek-V4-Flash-0731"
+  },
+  "pair-1-rewrite-surat": {
+   "case": "rewrite-surat",
+   "run": 1,
+   "left": "DeepSeek-V4-Flash-0731",
+   "right": "gpt-oss-120b"
+  }
+ }
+}
