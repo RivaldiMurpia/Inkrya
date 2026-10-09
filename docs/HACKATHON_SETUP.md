@@ -60,6 +60,16 @@ This lists NVIDIA Nemotron IDs actually visible to the configured key. It sends 
 
 Set `NEBIUS_TEXT_MODEL` to the exact selected ID as a common initial route. Optional role overrides: `ROUTER_MODEL`, `MEMORY_MODEL`, `PLANNER_MODEL`, `WRITER_MODEL`, `CONTINUITY_MODEL`, `CRITIC_MODEL`, `QA_MODEL`. Future embeddings use a separately selected `EMBEDDING_MODEL`; not implemented yet.
 
+### Writer model choice (2026-10-09)
+
+Two writer models are owner-accepted from the four-case few-shot prose experiment
+(`docs/evidence/phase1-fewshot-2026-10-09.md`): `openai/gpt-oss-120b` and
+`deepseek-ai/DeepSeek-V4-Flash-0731`. Users pick one in the Write panel or Krya panel
+(rewrite/continue); an empty choice keeps the server default (`WRITER_MODEL`). Per-request
+IDs are allowlisted to those two — anything else returns 400. The prose-gate sampling
+(temperature 0.2, top-p 0.95, non-thinking) and the few-shot example apply only to these
+two models; the gpt-oss writer budget is raised to cover its analysis channel.
+
 ```bash
 node --env-file=.env.local --experimental-strip-types scripts/nebius-preflight.mjs
 ```

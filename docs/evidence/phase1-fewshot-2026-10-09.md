@@ -149,6 +149,28 @@ acceptance remains the owner's human review over the recorded prose in
 `qa/phase1-fewshot/round4/5/6-2026-10-09.jsonl` plus the app-level 4-case pass once a
 writer role is wired.
 
+## App-level pass — live Preview `/api/ai`, both accepted models (2026-10-09)
+
+Deployment `inkrya-oqtbo0t5j` (commit `e344755`, the writer-model-choice feature).
+Script: `scripts/phase1-app-pass.mjs`; raw: `qa/phase1-fewshot/app-pass-2026-10-09.jsonl`
+(8 live calls through the real application route with the standing test account and the
+fixture project — the same API a user's browser calls). 7/8 inside range; every
+`ai_generations` row persisted with its generation id.
+
+- **gpt-oss-120b via app: 4/4 mechanical** — 61/46/63/52 words. Prose intact, no leaks.
+  Note the fixture chapter context (a lab-radio scene) colors word choice ("monitor",
+  "laboratorium") — that is the product's real context flow working, not a defect; the
+  length/leak/sentence filters all pass.
+- **DeepSeek-V4-Flash via app: 3/4 mechanical** — `app-continue-radio` overshot at 73
+  words (limit 70); its other three cases pass. Prose carries the same quality class as
+  the offline runs (one invented "akademi"/"kode" backstory element, recorded honestly).
+
+**Interpretation:** both accepted models work end-to-end through the live application,
+including the writer-model selector, allowlist, sampling, few-shot injection and budgets.
+The remaining variance (one overshoot by 3 words) is within the class already documented
+in the offline rounds; the standing Phase 1 prose gate now has an app-level artifact for
+the owner's formal human review.
+
 ## Human review
 
 Pending — mechanical output is a screen only; the gate is a human pass on the prose.
