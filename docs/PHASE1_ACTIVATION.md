@@ -1,6 +1,28 @@
-# Phase 1 activation evidence — updated 2026-09-25
+# Phase 1 activation evidence — updated 2026-10-09
 
-Branch: `hackathon/nebius-2026`. **Phase 1 remains INCOMPLETE solely on the Indonesian prose-quality gate. Phase 2 has not started.** The editor/revision, stale-source, application LangSmith readback, and regression gates below passed. Production was not promoted and remains Gateway. Earlier dated checkpoints in this file describe what was *then* pending; the current gate status is recorded here.
+Branch: `feat/phase2-pgvector`. **Phase 1 PASSED — 2026-10-09.** The Indonesian prose gate
+closed with two owner-accepted writer models. Summary:
+
+1. **Few-shot experiment (2026-10-09, 6 rounds, 64 recorded public-endpoint calls):**
+   Super fails the four-case screen at temperature 0.2/0.6/1.0 even with a few-shot
+   example; `openai/gpt-oss-120b` and `deepseek-ai/DeepSeek-V4-Flash-0731` pass with a
+   few-shot example, temperature 0.2 and a 1200-token budget (gpt-oss needs the budget for
+   its analysis channel). Full evidence: `docs/evidence/phase1-fewshot-2026-10-09.md`,
+   raw data `qa/phase1-fewshot/*.jsonl` (commit `14f3fe8`).
+2. **Writer model choice shipped (commit `e344755`, Preview `inkrya-oqtbo0t5j`):** the two
+   accepted models are selectable in the Write and Krya panels; per-request IDs are
+   allowlisted; prose-gate sampling and the few-shot prompt apply only to them; gpt-oss
+   gets a raised writer budget. 177/177 tests, typecheck and build green.
+3. **App-level pass (commit `389f19b`):** 8 live `/api/ai` calls with the standing test
+   account — gpt-oss-120b 4/4 mechanical, DeepSeek-V4-Flash 3/4 (one 73-word overshoot,
+   limit 70). Generation IDs persisted in `ai_generations`.
+4. **Owner acceptance (2026-10-09):** the owner reviewed the recorded prose and accepted
+   both writers 4/4. **The Phase 1 prose gate is PASSED.** Formal human preference testing
+   (Toloka) remains optional follow-up, not a gate.
+
+The checkpoints below are historical records of what was *then* pending; they are retained
+unchanged. The previously blocked Plan C LoRA serving route is no longer needed — the gate
+closed through catalog models instead.
 
 **Approved canary blocked before create, 2026-09-25 02:45 UTC:** The user approved one private H100 run with a 60-minute wall-clock cap. The Nebius AI Cloud account console still served a Cloudflare security block after one reload; no authenticated Nebius CLI is installed in this workspace. Therefore account payment/top-up status, quota/stock, displayed GPU/disk price, image/region availability and service-account permissions **cannot be verified**, and the user's pre-create gate prevents VM creation. The adapter and exact two-prompt bundle pass local preflight. **Zero VM/payment/inference/disk resources created; zero new quality outputs.** The first-payment amount is unknown, not accepted. The [canary gate](../qa/plan-c/PRIVATE_CANARY_GATE.md) records the stopping point. Production Gateway, `WRITER_MODEL` and Phase 2 remain unchanged; Phase 1 INCOMPLETE.
 

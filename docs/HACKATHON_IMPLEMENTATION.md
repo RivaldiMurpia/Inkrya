@@ -2,10 +2,19 @@
 
 Updated: 2026-10-07. The supplied `INKRYA_HACKATHON_PRD.md` v1.0 is the product authority. Earlier alpha requirements remain context, not the hackathon delivery checklist.
 
-## Current increment: Phases 2–8 delivered; Phase 1 prose gate still open
+## Current increment: Phases 2–8 delivered; Phase 1 prose gate PASSED (2026-10-09)
 
-Phase 1 Indonesian prose acceptance remains **INCOMPLETE** (Super and the Ultra/Lightning
-Writer pilots failed the four-case corpus). Phases **2, 3, 4, 5 and 6 are delivered and
+Phase 1 Indonesian prose acceptance is **PASSED** as of 2026-10-09: a six-round few-shot
+experiment (`docs/evidence/phase1-fewshot-2026-10-09.md`) found two catalog models that
+pass the four-case screen — `openai/gpt-oss-120b` and `deepseek-ai/DeepSeek-V4-Flash-0731`
+(few-shot example, temperature 0.2, budget 1200; Super fails at every tested temperature).
+Both are shipped as a user-selectable writer choice (commit `e344755`), and an app-level
+pass through the live Preview `/api/ai` recorded 4/4 mechanical for gpt-oss and 3/4 for
+DeepSeek (commit `389f19b`). **The owner reviewed the recorded prose and accepted both
+writers 4/4 (2026-10-09).** The historical LoRA/canary records below are preserved
+unchanged; the previously blocked Plan C serving route is no longer needed.
+
+Phases **2, 3, 4, 5 and 6 are delivered and
 verified on Preview** — see [PHASE2_3_4_DELIVERY.md](PHASE2_3_4_DELIVERY.md) and
 [PHASE5_DELIVERY.md](PHASE5_DELIVERY.md) / [PHASE6_DELIVERY.md](PHASE6_DELIVERY.md) for the schema,
 retrieval, Ask Your Story, Agentic Writing, Canon Update and Story Doctor details, the fixed
